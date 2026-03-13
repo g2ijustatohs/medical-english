@@ -127,8 +127,6 @@
     }
     .tc-btn.bookmarked { background: var(--accent); color: #fff; border-color: var(--accent); }
     .delete-btn { color: #8B2020 !important; border-color: rgba(139,32,32,0.2) !important; }
-    .speak-btn { color: #1A5C9E !important; border-color: rgba(26,92,158,0.25) !important; }
-    .speak-btn.speaking { background: #1A5C9E !important; color: #fff !important; border-color: #1A5C9E !important; }
 
     /* Add form */
     .add-form { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
@@ -161,12 +159,6 @@
     }
     .toast.show { opacity: 1; }
   </style>
- <script src="./words.js"></script>
-  <script>
-document.addEventListener("DOMContentLoaded", function(){
-  loadData();
-});
-</script>
 </head>
 <body>
 
@@ -309,7 +301,58 @@ const DEPTS = {
 const CATS = { all:"すべて", symptom:"症状", anatomy:"身体部位", diagnosis:"診断・検査", treatment:"治療・処置", vital:"バイタル", common:"よく使うフレーズ" };
 const LEVELS = { basic:"基礎", intermediate:"中級", advanced:"上級" };
 
-const BUILTIN = WORDS_DB;
+const BUILTIN = [
+  { en:"Chief complaint", abbr:"CC", ja:"主訴", note:"患者が最も困っている症状。問診の最初に確認する。", example:"What is your chief complaint today?", cat:"common", level:"basic", dept:"GEN" },
+  { en:"Medical history", abbr:"PMH", ja:"病歴", note:"Past medical history。既往症・手術歴・入院歴を含む。", example:"Does the patient have any significant past medical history?", cat:"common", level:"basic", dept:"GEN" },
+  { en:"Vital signs", abbr:"VS", ja:"バイタルサイン", note:"BP・HR・RR・Temp・SpO2の総称。", example:"Please check the vital signs every 4 hours.", cat:"vital", level:"basic", dept:"GEN" },
+  { en:"Blood pressure", abbr:"BP", ja:"血圧", note:"単位はmmHg。収縮期/拡張期で表記。", example:"The BP is 140/90 mmHg, which is elevated.", cat:"vital", level:"basic", dept:"GEN" },
+  { en:"Heart rate", abbr:"HR", ja:"心拍数", note:"単位はbpm。Bradycardia(<60) / Tachycardia(>100)。", example:"The heart rate is irregular at 110 bpm.", cat:"vital", level:"basic", dept:"GEN" },
+  { en:"Respiratory rate", abbr:"RR", ja:"呼吸数", note:"正常：12–20回/分。Tachypnea >20。", example:"RR is 24, indicating tachypnea.", cat:"vital", level:"basic", dept:"GEN" },
+  { en:"Oxygen saturation", abbr:"SpO2", ja:"酸素飽和度", note:"正常：96–100%。90%以下は低酸素血症。", example:"SpO2 dropped to 88% on room air.", cat:"vital", level:"basic", dept:"GEN" },
+  { en:"Dyspnea", abbr:"SOB", ja:"呼吸困難", note:"Shortness of breathとも。労作時・安静時を区別する。", example:"The patient complains of dyspnea on exertion.", cat:"symptom", level:"intermediate", dept:"RESP" },
+  { en:"Tachycardia", abbr:"", ja:"頻脈", note:"HR > 100 bpm。発熱・貧血・不安など多くの原因がある。", example:"Sinus tachycardia was noted on the ECG.", cat:"symptom", level:"intermediate", dept:"CV" },
+  { en:"Bradycardia", abbr:"", ja:"徐脈", note:"HR < 60 bpm。β遮断薬・迷走神経反射など。", example:"The patient developed bradycardia after the medication.", cat:"symptom", level:"intermediate", dept:"CV" },
+  { en:"Hypertension", abbr:"HTN", ja:"高血圧", note:"BP ≥ 130/80 mmHg (AHA 2017基準)。", example:"He has a history of hypertension, controlled with medication.", cat:"symptom", level:"basic", dept:"CV" },
+  { en:"Hypotension", abbr:"", ja:"低血圧", note:"BP < 90/60 mmHg。ショックの徴候に注意。", example:"Hypotension persisted despite fluid resuscitation.", cat:"symptom", level:"intermediate", dept:"ER" },
+  { en:"Nausea / Vomiting", abbr:"N/V", ja:"悪心／嘔吐", note:"N/Vと略記。回数・性状・血液混入を確認。", example:"She reports nausea and vomiting for 2 days.", cat:"symptom", level:"basic", dept:"GI" },
+  { en:"Diaphoresis", abbr:"", ja:"発汗（冷汗）", note:"Cold / clammy skinと表現することも。ACSのサイン。", example:"The patient was pale and diaphoretic on arrival.", cat:"symptom", level:"advanced", dept:"CV" },
+  { en:"Edema", abbr:"", ja:"浮腫", note:"Pitting edema（圧痕性）/ Non-pittingで分類。1+〜4+で重症度表現。", example:"Bilateral pitting edema was found up to the knees.", cat:"symptom", level:"intermediate", dept:"CV" },
+  { en:"Syncope", abbr:"", ja:"失神", note:"Pre-syncope（失神前状態）と区別。起立性・心原性など。", example:"The patient experienced syncope while standing up.", cat:"symptom", level:"intermediate", dept:"ER" },
+  { en:"Hemoptysis", abbr:"", ja:"喀血", note:"Hematemesis（吐血）と混同しないこと。", example:"Hemoptysis may indicate tuberculosis or lung cancer.", cat:"symptom", level:"advanced", dept:"RESP" },
+  { en:"Palpitation", abbr:"", ja:"動悸", note:"Irregular / rapid / forcefulなど性状を確認。", example:"She reports palpitations lasting several seconds.", cat:"symptom", level:"intermediate", dept:"CV" },
+  { en:"Abdomen", abbr:"Abd", ja:"腹部", note:"Soft / rigid / tender / distendedで表現。", example:"The abdomen is soft and non-tender on palpation.", cat:"anatomy", level:"basic", dept:"GI" },
+  { en:"Trachea", abbr:"", ja:"気管", note:"Tracheal deviation：縦隔偏位のサイン。", example:"The trachea is midline, no deviation noted.", cat:"anatomy", level:"intermediate", dept:"RESP" },
+  { en:"CBC", abbr:"", ja:"全血球計算", note:"Complete Blood Count。WBC・RBC・Hgb・Hct・Pltを含む。", example:"CBC showed leukocytosis with a left shift.", cat:"diagnosis", level:"basic", dept:"GEN" },
+  { en:"BMP", abbr:"", ja:"基礎代謝パネル", note:"Basic Metabolic Panel。Na・K・Cl・CO2・BUN・Cr・Glc。", example:"BMP revealed hyponatremia and elevated creatinine.", cat:"diagnosis", level:"intermediate", dept:"GEN" },
+  { en:"ECG / EKG", abbr:"", ja:"心電図", note:"12誘導が標準。リズム・ST変化・QTcを評価。", example:"A 12-lead ECG was performed immediately.", cat:"diagnosis", level:"basic", dept:"CV" },
+  { en:"CT scan", abbr:"CT", ja:"CT検査", note:"With contrast / without contrastで指示。", example:"A CT of the chest was ordered to rule out PE.", cat:"diagnosis", level:"basic", dept:"RAD" },
+  { en:"Urinalysis", abbr:"UA", ja:"尿検査", note:"Dipstick + microscopyで構成。", example:"Urinalysis showed hematuria and proteinuria.", cat:"diagnosis", level:"basic", dept:"URO" },
+  { en:"Blood culture", abbr:"BC", ja:"血液培養", note:"敗血症疑いで実施。2セット採取が原則。", example:"Blood cultures were drawn before starting antibiotics.", cat:"diagnosis", level:"intermediate", dept:"ER" },
+  { en:"IV access", abbr:"IV", ja:"静脈路確保", note:"Large bore IV（太いカテーテル）が緊急時に必要。", example:"Two large-bore IV lines were established.", cat:"treatment", level:"basic", dept:"ER" },
+  { en:"Intubation", abbr:"ETT", ja:"気管内挿管", note:"RSI（rapid sequence intubation）で実施することが多い。", example:"The patient was intubated for airway protection.", cat:"treatment", level:"advanced", dept:"ER" },
+  { en:"NPO", abbr:"NPO", ja:"絶食", note:"Nothing by mouth。手術前・嚥下障害時に指示。", example:"Keep the patient NPO after midnight.", cat:"treatment", level:"basic", dept:"GEN" },
+  { en:"PRN", abbr:"PRN", ja:"必要時", note:"Pro re nata（ラテン語）。症状に応じて投与。", example:"Acetaminophen 500mg PRN for pain.", cat:"treatment", level:"basic", dept:"GEN" },
+  { en:"Titrate", abbr:"", ja:"適正量に調整する", note:"Titrate to effect / to target BPなど。", example:"Titrate the vasopressor to maintain MAP above 65.", cat:"treatment", level:"advanced", dept:"ER" },
+  { en:"Discharge", abbr:"DC", ja:"退院・帰宅", note:"Admit（入院）の対語。DC summaryを記載する。", example:"The patient is stable for discharge tomorrow.", cat:"treatment", level:"basic", dept:"GEN" },
+  { en:"Myocardial infarction", abbr:"MI", ja:"心筋梗塞", note:"STEMI / NSTEMIに分類。Troponin上昇が診断の鍵。", example:"The patient presented with classic signs of MI.", cat:"diagnosis", level:"intermediate", dept:"CV" },
+  { en:"Angina pectoris", abbr:"", ja:"狭心症", note:"Stable / Unstable / Variantで分類。", example:"He has a history of stable angina pectoris.", cat:"symptom", level:"intermediate", dept:"CV" },
+  { en:"Heart failure", abbr:"HF", ja:"心不全", note:"EF保持型(HFpEF) / 低下型(HFrEF)。", example:"She was admitted for acute decompensated heart failure.", cat:"diagnosis", level:"intermediate", dept:"CV" },
+  { en:"Pneumonia", abbr:"PNA", ja:"肺炎", note:"CAP（市中）/ HAP（院内）/ VAP（人工呼吸器関連）。", example:"Community-acquired pneumonia was confirmed by chest X-ray.", cat:"diagnosis", level:"basic", dept:"RESP" },
+  { en:"Asthma", abbr:"", ja:"喘息", note:"Wheezing・呼吸困難・咳が三徴。Peak flowで評価。", example:"The child was brought in with an acute asthma attack.", cat:"diagnosis", level:"basic", dept:"RESP" },
+  { en:"COPD", abbr:"COPD", ja:"慢性閉塞性肺疾患", note:"Chronic Obstructive Pulmonary Disease。喫煙歴が重要。", example:"COPD exacerbation was treated with bronchodilators.", cat:"diagnosis", level:"intermediate", dept:"RESP" },
+  { en:"Appendicitis", abbr:"", ja:"虫垂炎", note:"McBurney点・Rebound tendernessが所見。", example:"The patient presented with right lower quadrant pain, suspect appendicitis.", cat:"diagnosis", level:"basic", dept:"SURG" },
+  { en:"Cholecystitis", abbr:"", ja:"胆嚢炎", note:"Murphy's sign陽性。超音波で確認。", example:"Acute cholecystitis was confirmed by ultrasound.", cat:"diagnosis", level:"intermediate", dept:"GI" },
+  { en:"Stroke", abbr:"CVA", ja:"脳卒中", note:"Cerebrovascular accident。FAST（顔・腕・言語・時間）で評価。", example:"The patient was brought in with signs of stroke.", cat:"diagnosis", level:"basic", dept:"NEURO" },
+  { en:"Seizure", abbr:"", ja:"痙攣", note:"Tonic-clonic / Absence / Focal など種類がある。", example:"The patient had a generalized tonic-clonic seizure.", cat:"symptom", level:"intermediate", dept:"NEURO" },
+  { en:"Fracture", abbr:"Fx", ja:"骨折", note:"Open（開放）/ Closed（閉鎖）/ Displaced（転位）。", example:"X-ray confirmed a displaced fracture of the radius.", cat:"diagnosis", level:"basic", dept:"ORTHO" },
+  { en:"Dislocation", abbr:"", ja:"脱臼", note:"Shoulder dislocationが最多。整復後X線確認。", example:"The shoulder dislocation was reduced in the ER.", cat:"diagnosis", level:"basic", dept:"ORTHO" },
+  { en:"Sepsis", abbr:"", ja:"敗血症", note:"感染症＋臓器障害。qSOFAスコアで評価。1時間バンドル開始。", example:"The patient met the criteria for sepsis.", cat:"diagnosis", level:"advanced", dept:"ER" },
+  { en:"Anaphylaxis", abbr:"", ja:"アナフィラキシー", note:"エピネフリン筋注が第一選択。遅延型に注意。", example:"The patient developed anaphylaxis after the bee sting.", cat:"diagnosis", level:"intermediate", dept:"ER" },
+  { en:"Fever", abbr:"", ja:"発熱", note:"Febrile = 発熱あり。>38.3℃を発熱と定義することが多い。", example:"The child has had a fever of 39°C for two days.", cat:"symptom", level:"basic", dept:"GEN" },
+  { en:"Pain scale", abbr:"NRS", ja:"疼痛スケール", note:"Numeric Rating Scale。0〜10で表現。", example:"Rate your pain on a scale of 0 to 10.", cat:"common", level:"basic", dept:"GEN" },
+  { en:"Allergies", abbr:"NKDA", ja:"アレルギー", note:"NKDA = No Known Drug Allergies（薬剤アレルギーなし）。", example:"Does the patient have any known drug allergies?", cat:"common", level:"basic", dept:"GEN" },
+  { en:"Informed consent", abbr:"IC", ja:"インフォームドコンセント", note:"処置・手術前に必須。文書で取得する。", example:"Informed consent was obtained before the procedure.", cat:"common", level:"basic", dept:"GEN" },
+];
 
 let allTerms = [];
 let bookmarks = new Set();
@@ -399,7 +442,6 @@ function termHTML(t) {
       ${t.note?`<div class="tc-note">${t.note}</div>`:''}
       ${t.example?`<div class="tc-example">"${t.example}"</div>`:''}
       <div class="tc-actions" onclick="event.stopPropagation()">
-        <button class="tc-btn speak-btn" onclick="speakTerm(event,'${t.en}','${t.example?t.example.replace(/\\/g,'').replace(/'/g,\"\\'\"): \"\"}')">🔊 読み上げ</button>
         <button class="tc-btn${isBk?' bookmarked':''}" onclick="toggleBk('${t.id}')">${isBk?'★ 保存中':'☆ ブックマーク'}</button>
         ${isCst?`<button class="tc-btn delete-btn" onclick="delTerm('${t.id}')">削除</button>`:''}
       </div>
@@ -421,56 +463,6 @@ function renderBookmarks() {
   document.getElementById('bmList').innerHTML = bm.length
     ? bm.map(termHTML).join('')
     : '<div class="empty-state"><div class="empty-icon">☆</div>ブックマークした単語がここに表示されます</div>';
-}
-
-// ===== 音声読み上げ =====
-let currentUtterance = null;
-
-function speakTerm(event, term, example) {
-  event.stopPropagation();
-  const btn = event.target;
-
-  // 読み上げ中なら停止
-  if (window.speechSynthesis.speaking) {
-    window.speechSynthesis.cancel();
-    document.querySelectorAll('.speak-btn').forEach(b => {
-      b.textContent = '🔊 読み上げ';
-      b.classList.remove('speaking');
-    });
-    if (btn.classList.contains('was-speaking')) {
-      btn.classList.remove('was-speaking');
-      return;
-    }
-  }
-
-  // テキスト作成：単語名 → 例文
-  const text = example ? `${term}. ${example}` : term;
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'en-US';
-  utter.rate = 0.9;
-  utter.pitch = 1.0;
-
-  // 英語音声を選ぶ
-  const voices = window.speechSynthesis.getVoices();
-  const enVoice = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
-  if (enVoice) utter.voice = enVoice;
-
-  btn.textContent = '⏸ 停止';
-  btn.classList.add('speaking');
-  btn.classList.add('was-speaking');
-
-  utter.onend = () => {
-    btn.textContent = '🔊 読み上げ';
-    btn.classList.remove('speaking');
-    btn.classList.remove('was-speaking');
-  };
-  utter.onerror = () => {
-    btn.textContent = '🔊 読み上げ';
-    btn.classList.remove('speaking');
-    btn.classList.remove('was-speaking');
-  };
-
-  window.speechSynthesis.speak(utter);
 }
 
 function toggleExp(id) {

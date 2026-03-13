@@ -423,20 +423,36 @@ let currentUtterance = null;
 
 function speakTerm(event, term, example) {
   event.stopPropagation();
+
   const btn = event.target;
 
-  // 読み上げ中なら停止
-  if (window.speechSynthesis.speaking) {
-    window.speechSynthesis.cancel();
-    document.querySelectorAll('.speak-btn').forEach(b => {
-      b.textContent = '🔊 読み上げ';
+  // 再生中なら停止
+  if (speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+    document.querySelectorAll('.speak-btn').forEach(b=>{
+      b.textContent='🔊 読み上げ';
       b.classList.remove('speaking');
     });
-    if (btn.classList.contains('was-speaking')) {
-      btn.classList.remove('was-speaking');
-      return;
-    }
+    return;
   }
+
+  const text = example ? term + ". " + example : term;
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  utter.pitch = 1;
+
+  btn.textContent="⏸ 停止";
+  btn.classList.add("speaking");
+
+  utter.onend = ()=>{
+    btn.textContent="🔊 読み上げ";
+    btn.classList.remove("speaking");
+  };
+
+  speechSynthesis.speak(utter);
+}
 
   // テキスト作成：単語名 → 例文
   const text = example ? `${term}. ${example}` : term;
@@ -531,6 +547,9 @@ function showToast(msg) {
 }
 
 loadData();
+  window.speechSynthesis.onvoiceschanged = () => {
+  window.speechSynthesis.getVoices();
+};
 
 // Service Worker 登録
 if ('serviceWorker' in navigator) {

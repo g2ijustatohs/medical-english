@@ -108,6 +108,14 @@
     .tc-abbr { display: inline-block; font-size: 11px; color: var(--accent2); font-family: 'DM Mono', monospace; background: var(--accent3); padding: 1px 6px; border-radius: 4px; margin-top: 3px; }
     .tc-ja { font-size: 13px; color: var(--text2); margin-top: 4px; font-weight: 400; }
     .tc-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+
+    /* 診療科バッジ グループ別カラー */
+    .tc-dept-badge { font-size: 10px; padding: 2px 7px; border-radius: 6px; font-family: 'DM Mono', monospace; white-space: nowrap; font-weight: 500; }
+    .tc-dept-er    { background: #FEF3C7; color: #92400E; }
+    .tc-dept-naika { background: #EDE9FE; color: #5B21B6; }
+    .tc-dept-geka  { background: #FCE7F3; color: #9D174D; }
+    .tc-dept-other { background: #F0FDF4; color: #166534; }
+    .tc-dept-gen   { background: #F1F5F9; color: #475569; }
     .tc-tag { font-size: 10px; padding: 2px 7px; border-radius: 6px; background: var(--accent3); color: var(--accent); font-family: 'DM Mono', monospace; white-space: nowrap; font-weight: 500; }
     .tc-level-basic    { font-size: 10px; padding: 2px 7px; border-radius: 6px; background: #ECFDF5; color: #065F46; font-family: 'DM Mono', monospace; font-weight: 500; }
     .tc-level-intermediate { font-size: 10px; padding: 2px 7px; border-radius: 6px; background: var(--accent3); color: var(--accent); font-family: 'DM Mono', monospace; font-weight: 500; }
@@ -245,23 +253,39 @@
   <div class="filter-row">
   <select class="dept-select" id="deptSelect" onchange="renderList()">
     <option value="all">すべての診療科</option>
-    <option value="ER">救急科</option>
-    <option value="IM">内科</option>
-    <option value="CV">循環器科</option>
-    <option value="RESP">呼吸器科</option>
-    <option value="GI">消化器科</option>
-    <option value="NEURO">脳神経科</option>
-    <option value="ORTHO">整形外科</option>
-    <option value="SURG">外科</option>
-    <option value="PED">小児科</option>
-    <option value="OB">産婦人科</option>
-    <option value="PSY">精神科</option>
-    <option value="DERM">皮膚科</option>
-    <option value="URO">泌尿器科</option>
-    <option value="OPH">眼科</option>
-    <option value="ENT">耳鼻咽喉科</option>
-    <option value="RAD">放射線科</option>
     <option value="GEN">共通</option>
+    <option value="ER">救急科</option>
+    <optgroup label="── 内科系 ──">
+      <option value="IM">総合内科</option>
+      <option value="CV">循環器内科</option>
+      <option value="RESP">呼吸器内科</option>
+      <option value="GI">消化器内科</option>
+      <option value="NEURO">神経内科</option>
+      <option value="RHEUM">リウマチ科</option>
+      <option value="ENDO">内分泌・代謝科</option>
+      <option value="NEPH">腎臓内科</option>
+      <option value="HEME">血液内科</option>
+      <option value="ONCO">腫瘍内科</option>
+      <option value="INFECT">感染症内科</option>
+    </optgroup>
+    <optgroup label="── 外科系 ──">
+      <option value="SURG">外科</option>
+      <option value="ORTHO">整形外科</option>
+      <option value="NSURG">脳神経外科</option>
+      <option value="CSURG">心臓血管外科</option>
+      <option value="PSURG">形成外科</option>
+    </optgroup>
+    <optgroup label="── その他 ──">
+      <option value="PED">小児科</option>
+      <option value="OB">産婦人科</option>
+      <option value="PSY">精神科</option>
+      <option value="DERM">皮膚科</option>
+      <option value="URO">泌尿器科</option>
+      <option value="OPH">眼科</option>
+      <option value="ENT">耳鼻咽喉科</option>
+      <option value="RAD">放射線科</option>
+      <option value="ANES">麻酔科</option>
+    </optgroup>
   </select>
   <select class="level-select" id="levelSelect" onchange="renderList()">
     <option value="all">全レベル</option>
@@ -420,10 +444,16 @@
 
 <script>
 const DEPTS = {
-  GEN:"共通", ER:"救急科", IM:"内科", CV:"循環器科", RESP:"呼吸器科",
-  GI:"消化器科", NEURO:"脳神経科", ORTHO:"整形外科", SURG:"外科",
+  GEN:"共通", ER:"救急科",
+  // 内科系
+  IM:"総合内科", CV:"循環器内科", RESP:"呼吸器内科", GI:"消化器内科",
+  NEURO:"神経内科", RHEUM:"リウマチ科", ENDO:"内分泌・代謝科",
+  NEPH:"腎臓内科", HEME:"血液内科", ONCO:"腫瘍内科", INFECT:"感染症内科",
+  // 外科系
+  SURG:"外科", ORTHO:"整形外科", NSURG:"脳神経外科", CSURG:"心臓血管外科", PSURG:"形成外科",
+  // その他
   PED:"小児科", OB:"産婦人科", PSY:"精神科", DERM:"皮膚科",
-  URO:"泌尿器科", OPH:"眼科", ENT:"耳鼻咽喉科", RAD:"放射線科"
+  URO:"泌尿器科", OPH:"眼科", ENT:"耳鼻咽喉科", RAD:"放射線科", ANES:"麻酔科"
 };
 const CATS = { all:"すべて", symptom:"症状", anatomy:"身体部位", diagnosis:"診断・検査", treatment:"治療・処置", vital:"バイタル", common:"よく使うフレーズ" };
 const LEVELS = { basic:"基礎", intermediate:"中級", advanced:"上級" };
@@ -494,6 +524,15 @@ function getFiltered() {
   });
 }
 
+
+function deptGroup(dept) {
+  if (dept === 'ER') return 'er';
+  if (['IM','CV','RESP','GI','NEURO','RHEUM','ENDO','NEPH','HEME','ONCO','INFECT'].includes(dept)) return 'naika';
+  if (['SURG','ORTHO','NSURG','CSURG','PSURG'].includes(dept)) return 'geka';
+  if (['PED','OB','PSY','DERM','URO','OPH','ENT','RAD','ANES'].includes(dept)) return 'other';
+  return 'gen';
+}
+
 function levelClass(l) { return `tc-level-${l||'basic'}`; }
 
 function termHTML(t) {
@@ -513,7 +552,7 @@ function termHTML(t) {
       <div class="tc-badges">
         <span class="tc-tag">${CATS[t.cat]||t.cat}</span>
         <span class="${levelClass(t.level)}">${LEVELS[t.level]||t.level}</span>
-        ${t.dept&&t.dept!=='GEN'?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#F1EFE8;color:#5F5E5A;font-family:'DM Mono',monospace">${DEPTS[t.dept]||t.dept}</span>`:''}
+        ${t.dept&&t.dept!=='GEN'?`<span class="tc-dept-badge tc-dept-${deptGroup(t.dept)}">${DEPTS[t.dept]||t.dept}</span>`:''}
       </div>
     </div>
     <div class="tc-detail">
@@ -664,13 +703,41 @@ let flWrong = [];
 let flMode = 'en2ja';
 
 function initFlash() {
-  // 診療科セレクトを初期化
+  // 診療科セレクトをグループ付きで初期化
   const deptSel = document.getElementById('fl-dept');
   if (deptSel.options.length <= 1) {
-    const depts = [...new Set(allTerms.map(t => t.dept))].sort();
-    depts.forEach(d => {
+    const existing = new Set(allTerms.map(t => t.dept));
+    const groups = [
+      { label: null, depts: ['GEN','ER'] },
+      { label: '── 内科系 ──', depts: ['IM','CV','RESP','GI','NEURO','RHEUM','ENDO','NEPH','HEME','ONCO','INFECT'] },
+      { label: '── 外科系 ──', depts: ['SURG','ORTHO','NSURG','CSURG','PSURG'] },
+      { label: '── その他 ──', depts: ['PED','OB','PSY','DERM','URO','OPH','ENT','RAD','ANES'] }
+    ];
+    groups.forEach(g => {
+      const filtered = g.depts.filter(d => existing.has(d));
+      if (!filtered.length) return;
+      if (g.label) {
+        const og = document.createElement('optgroup');
+        og.label = g.label;
+        filtered.forEach(d => {
+          const o = document.createElement('option');
+          o.value = d; o.textContent = DEPTS[d] || d;
+          og.appendChild(o);
+        });
+        deptSel.appendChild(og);
+      } else {
+        filtered.forEach(d => {
+          const o = document.createElement('option');
+          o.value = d; o.textContent = DEPTS[d] || d;
+          deptSel.appendChild(o);
+        });
+      }
+    });
+    // DEPTS未定義の科を末尾に追加
+    const defined = groups.flatMap(g => g.depts);
+    [...existing].filter(d => !defined.includes(d)).sort().forEach(d => {
       const o = document.createElement('option');
-      o.value = d; o.textContent = (DEPTS[d] || d);
+      o.value = d; o.textContent = DEPTS[d] || d;
       deptSel.appendChild(o);
     });
   }

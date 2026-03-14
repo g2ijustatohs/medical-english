@@ -109,6 +109,17 @@
     .tc-ja { font-size: 13px; color: var(--text2); margin-top: 4px; font-weight: 400; }
     .tc-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
 
+
+    /* 言語切替 */
+    .lang-switcher { display: flex; gap: 6px; }
+    .lang-btn {
+      padding: 5px 10px; font-size: 12px; font-weight: 600;
+      border: 1.5px solid rgba(255,255,255,0.3); border-radius: 20px;
+      background: transparent; color: rgba(255,255,255,0.6);
+      cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+    }
+    .lang-btn.active { background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.6); }
+    .lang-btn:active { transform: scale(0.95); }
     /* 診療科バッジ グループ別カラー */
     .tc-dept-badge { font-size: 10px; padding: 2px 7px; border-radius: 6px; font-family: 'DM Mono', monospace; white-space: nowrap; font-weight: 500; }
     .tc-dept-er    { background: #FEF3C7; color: #92400E; }
@@ -227,8 +238,11 @@
 
 <div class="header">
   <div class="header-top">
-    <div class="header-title">Medical English</div>
-    <div class="header-badge">医療英語辞書</div>
+    <div class="header-title" id="headerTitle">Medical English</div>
+    <div class="lang-switcher">
+      <button class="lang-btn active" id="btn-en" onclick="setLang('en')">🇬🇧 EN</button>
+      <button class="lang-btn" id="btn-de" onclick="setLang('de')">🇩🇪 DE</button>
+    </div>
   </div>
   <div class="stats-bar">
     <div class="stat-item"><span class="stat-num" id="totalCount">0</span><span class="stat-lbl">単語数</span></div>
@@ -519,7 +533,7 @@ function getFiltered() {
     const catOk = currentCat === 'all' || t.cat === currentCat;
     const deptOk = dept === 'all' || t.dept === dept;
     const levelOk = level === 'all' || t.level === level;
-    const qOk = !q || t.en.toLowerCase().includes(q) || t.ja.includes(q) || (t.abbr&&t.abbr.toLowerCase().includes(q)) || (t.note&&t.note.toLowerCase().includes(q));
+    const qOk = !q || t.en.toLowerCase().includes(q) || t.ja.includes(q) || (t.de&&t.de.toLowerCase().includes(q)) || (t.abbr&&t.abbr.toLowerCase().includes(q)) || (t.note&&t.note.toLowerCase().includes(q));
     return catOk && deptOk && levelOk && qOk;
   });
 }
@@ -543,7 +557,7 @@ function termHTML(t) {
     <div class="tc-top">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
-          <span class="tc-en">${t.en}</span>
+          <span class="tc-en">${mainText(t)}</span>
           ${t.abbr?`<span class="tc-abbr">(${t.abbr})</span>`:''}
           ${isCst?`<span style="font-size:10px;padding:1px 6px;background:#FAEEDA;color:#633806;border-radius:10px;font-family:'DM Mono',monospace">custom</span>`:''}
         </div>
@@ -598,7 +612,7 @@ function pickVoice() {
 }
 
 // テキストを読み上げる共通関数
-function speakText(text, btn) {
+function speakText(text, btn, lang) {
   // 読み上げ中なら停止
   if (window.speechSynthesis.speaking) {
     window.speechSynthesis.cancel();
@@ -610,7 +624,7 @@ function speakText(text, btn) {
   }
 
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'en-GB';
+  utter.lang = lang || speechLang();
   utter.rate = 0.9;
   utter.pitch = 0.9;
 
@@ -650,8 +664,9 @@ function speakById(event, btn) {
   const id = btn.getAttribute('data-id');
   const term = allTerms.find(t => t.id === id);
   if (!term) return;
-  const text = term.example ? term.en + '. ' + term.example : term.en;
-  speakText(text, btn);
+  const mainT = mainText(term);
+  const text = (currentLang === 'en' && term.example) ? mainT + '. ' + term.example : mainT;
+  speakText(text, btn, speechLang());
 }
 
 function toggleExp(id) {
@@ -791,17 +806,19 @@ function showCard() {
   if (mode === 'random') mode = Math.random() < 0.5 ? 'en2ja' : 'ja2en';
 
   if (mode === 'en2ja') {
-    document.getElementById('fl-front-label').textContent = 'ENGLISH';
+    const langLabel = currentLang === 'de' ? 'DEUTSCH' : 'ENGLISH';
+    document.getElementById('fl-front-label').textContent = langLabel;
     document.getElementById('fl-back-label').textContent = '日本語';
-    document.getElementById('fl-question').textContent = t.en;
+    document.getElementById('fl-question').textContent = mainText(t);
     document.getElementById('fl-abbr').textContent = t.abbr ? '(' + t.abbr + ')' : '';
     document.getElementById('fl-answer').textContent = t.ja;
   } else {
+    const answerLang = currentLang === 'de' ? 'DEUTSCH' : 'ENGLISH';
     document.getElementById('fl-front-label').textContent = '日本語';
-    document.getElementById('fl-back-label').textContent = 'ENGLISH';
+    document.getElementById('fl-back-label').textContent = answerLang;
     document.getElementById('fl-question').textContent = t.ja;
     document.getElementById('fl-abbr').textContent = '';
-    document.getElementById('fl-answer').textContent = t.en + (t.abbr ? ' (' + t.abbr + ')' : '');
+    document.getElementById('fl-answer').textContent = mainText(t) + (t.abbr ? ' (' + t.abbr + ')' : '');
   }
 
   document.getElementById('fl-note').textContent = t.note || '';
@@ -884,9 +901,40 @@ function restartWrong() {
 function speakFlash() {
   if (flCards.length === 0 || flIndex >= flCards.length) return;
   const t = flCards[flIndex];
-  const text = t.example ? t.en + '. ' + t.example : t.en;
+  const mainT = mainText(t);
+  const text = (currentLang === 'en' && t.example) ? mainT + '. ' + t.example : mainT;
   const btn = document.querySelector('.fl-speak');
-  speakText(text, btn);
+  speakText(text, btn, speechLang());
+}
+
+
+// ===== 言語切替 =====
+let currentLang = 'en'; // 'en' or 'de'
+
+function setLang(lang) {
+  currentLang = lang;
+  // ボタンのアクティブ状態
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-de').classList.toggle('active', lang === 'de');
+  // ヘッダータイトル
+  document.getElementById('headerTitle').textContent =
+    lang === 'en' ? 'Medical English' : 'Medizinisches Deutsch';
+  // 音声言語も更新
+  // 再描画
+  if (currentTab === 'search') renderList();
+  else if (currentTab === 'bookmarks') renderBookmarks();
+  else if (currentTab === 'flash') { flCards = []; setupFlash(); }
+}
+
+// 現在言語での主テキストを取得
+function mainText(t) {
+  if (currentLang === 'de') return t.de || t.en;
+  return t.en;
+}
+
+// 言語に応じた音声コード
+function speechLang() {
+  return currentLang === 'de' ? 'de-DE' : 'en-GB';
 }
 
 function switchTab(tab, el) {

@@ -394,7 +394,7 @@ function termHTML(t) {
       ${t.note?`<div class="tc-note">${t.note}</div>`:''}
       ${t.example?`<div class="tc-example">"${t.example}"</div>`:''}
       <div class="tc-actions" onclick="event.stopPropagation()">
-        <button class="tc-btn speak-btn" onclick="speakTerm(event,'${t.en}','${t.example?t.example.replace(/\\/g,'').replace(/'/g,\"\\'\"): \"\"}')">🔊 読み上げ</button>
+        <button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakById(event,this)">🔊 読み上げ</button>
         <button class="tc-btn${isBk?' bookmarked':''}" onclick="toggleBk('${t.id}')">${isBk?'★ 保存中':'☆ ブックマーク'}</button>
         ${isCst?`<button class="tc-btn delete-btn" onclick="delTerm('${t.id}')">削除</button>`:''}
       </div>
@@ -419,11 +419,11 @@ function renderBookmarks() {
 }
 
 // ===== 音声読み上げ =====
-let currentUtterance = null;
-
-function speakTerm(event, term, example) {
+function speakById(event, btn) {
   event.stopPropagation();
-  const btn = event.target;
+  const id = btn.getAttribute('data-id');
+  const term = allTerms.find(t => t.id === id);
+  if (!term) return;
 
   // 読み上げ中なら停止
   if (window.speechSynthesis.speaking) {
@@ -432,40 +432,51 @@ function speakTerm(event, term, example) {
       b.textContent = '🔊 読み上げ';
       b.classList.remove('speaking');
     });
-    if (btn.classList.contains('was-speaking')) {
-      btn.classList.remove('was-speaking');
-      return;
-    }
+    return;
   }
 
-  // テキスト作成：単語名 → 例文
-  const text = example ? `${term}. ${example}` : term;
+  // 単語名 + 例文を読む
+  const text = term.example ? term.en + '. ' + term.example : term.en;
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = 'en-US';
-  utter.rate = 0.9;
+  utter.rate = 0.85;
   utter.pitch = 1.0;
 
-  // 英語音声を選ぶ
+  // 音声リスト取得（iOS対応：遅延読み込み）
+  function doSpeak() {
+    const voices = window.speechSynthesis.getVoices();
+    const enVoice = voices.find(v => v.lang === 'en-US') ||
+                    voices.find(v => v.lang.startsWith('en'));
+    if (enVoice) utter.voice = enVoice;
+
+    btn.textContent = '⏹ 停止';
+    btn.classList.add('speaking');
+
+    utter.onend = () => {
+      btn.textContent = '🔊 読み上げ';
+      btn.classList.remove('speaking');
+    };
+    utter.onerror = () => {
+      btn.textContent = '🔊 読み上げ';
+      btn.classList.remove('speaking');
+    };
+    window.speechSynthesis.speak(utter);
+  }
+
+  // iOS Safari: 音声リストが空の場合は onvoiceschanged を待つ
   const voices = window.speechSynthesis.getVoices();
-  const enVoice = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
-  if (enVoice) utter.voice = enVoice;
-
-  btn.textContent = '⏸ 停止';
-  btn.classList.add('speaking');
-  btn.classList.add('was-speaking');
-
-  utter.onend = () => {
-    btn.textContent = '🔊 読み上げ';
-    btn.classList.remove('speaking');
-    btn.classList.remove('was-speaking');
-  };
-  utter.onerror = () => {
-    btn.textContent = '🔊 読み上げ';
-    btn.classList.remove('speaking');
-    btn.classList.remove('was-speaking');
-  };
-
-  window.speechSynthesis.speak(utter);
+  if (voices.length > 0) {
+    doSpeak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      doSpeak();
+    };
+    // フォールバック：0.5秒後に強制実行
+    setTimeout(() => {
+      if (!window.speechSynthesis.speaking) doSpeak();
+    }, 500);
+  }
 }
 
 function toggleExp(id) {

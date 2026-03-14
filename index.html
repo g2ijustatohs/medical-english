@@ -542,51 +542,55 @@ function renderBookmarks() {
 }
 
 // ===== 音声読み上げ =====
-function speakById(event, btn) {
-  event.stopPropagation();
-  const id = btn.getAttribute('data-id');
-  const term = allTerms.find(t => t.id === id);
-  if (!term) return;
 
+// UK男性音声を優先して選ぶ共通関数
+function pickVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  // 優先順位：en-GB男性 → en-GB → en-US男性 → en-US → その他英語
+  return voices.find(v => v.lang === 'en-GB' && v.name.match(/male|daniel|oliver|arthur/i))
+      || voices.find(v => v.lang === 'en-GB')
+      || voices.find(v => v.lang === 'en-US' && v.name.match(/male|alex|fred/i))
+      || voices.find(v => v.lang === 'en-US')
+      || voices.find(v => v.lang.startsWith('en'))
+      || null;
+}
+
+// テキストを読み上げる共通関数
+function speakText(text, btn) {
   // 読み上げ中なら停止
   if (window.speechSynthesis.speaking) {
     window.speechSynthesis.cancel();
-    document.querySelectorAll('.speak-btn').forEach(b => {
-      b.textContent = '🔊 読み上げ';
+    document.querySelectorAll('.speak-btn, .fl-speak').forEach(b => {
+      b.textContent = b.classList.contains('fl-speak') ? '🔊' : '🔊 読み上げ';
       b.classList.remove('speaking');
     });
     return;
   }
 
-  // 単語名 + 例文を読む
-  const text = term.example ? term.en + '. ' + term.example : term.en;
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'en-US';
-  utter.rate = 0.85;
-  utter.pitch = 1.0;
+  utter.lang = 'en-GB';
+  utter.rate = 0.9;
+  utter.pitch = 0.9;
 
-  // 音声リスト取得（iOS対応：遅延読み込み）
   function doSpeak() {
-    const voices = window.speechSynthesis.getVoices();
-    const enVoice = voices.find(v => v.lang === 'en-US') ||
-                    voices.find(v => v.lang.startsWith('en'));
-    if (enVoice) utter.voice = enVoice;
+    const voice = pickVoice();
+    if (voice) utter.voice = voice;
 
-    btn.textContent = '⏹ 停止';
-    btn.classList.add('speaking');
-
-    utter.onend = () => {
-      btn.textContent = '🔊 読み上げ';
-      btn.classList.remove('speaking');
-    };
-    utter.onerror = () => {
-      btn.textContent = '🔊 読み上げ';
-      btn.classList.remove('speaking');
+    if (btn) {
+      const isFlash = btn.classList.contains('fl-speak');
+      btn.textContent = isFlash ? '⏹' : '⏹ 停止';
+      btn.classList.add('speaking');
+    }
+    utter.onend = utter.onerror = () => {
+      if (btn) {
+        const isFlash = btn.classList.contains('fl-speak');
+        btn.textContent = isFlash ? '🔊' : '🔊 読み上げ';
+        btn.classList.remove('speaking');
+      }
     };
     window.speechSynthesis.speak(utter);
   }
 
-  // iOS Safari: 音声リストが空の場合は onvoiceschanged を待つ
   const voices = window.speechSynthesis.getVoices();
   if (voices.length > 0) {
     doSpeak();
@@ -595,11 +599,17 @@ function speakById(event, btn) {
       window.speechSynthesis.onvoiceschanged = null;
       doSpeak();
     };
-    // フォールバック：0.5秒後に強制実行
-    setTimeout(() => {
-      if (!window.speechSynthesis.speaking) doSpeak();
-    }, 500);
+    setTimeout(() => { if (!window.speechSynthesis.speaking) doSpeak(); }, 500);
   }
+}
+
+function speakById(event, btn) {
+  event.stopPropagation();
+  const id = btn.getAttribute('data-id');
+  const term = allTerms.find(t => t.id === id);
+  if (!term) return;
+  const text = term.example ? term.en + '. ' + term.example : term.en;
+  speakText(text, btn);
 }
 
 function toggleExp(id) {
@@ -805,13 +815,8 @@ function speakFlash() {
   if (flCards.length === 0 || flIndex >= flCards.length) return;
   const t = flCards[flIndex];
   const text = t.example ? t.en + '. ' + t.example : t.en;
-  if (window.speechSynthesis.speaking) { window.speechSynthesis.cancel(); return; }
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'en-US'; utter.rate = 0.85;
-  const voices = window.speechSynthesis.getVoices();
-  const v = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
-  if (v) utter.voice = v;
-  window.speechSynthesis.speak(utter);
+  const btn = document.querySelector('.fl-speak');
+  speakText(text, btn);
 }
 
 function switchTab(tab, el) {

@@ -1,7 +1,8 @@
-const CACHE = 'medical-en-v3';
+const CACHE = 'medical-en-v4';
 const ASSETS = [
   './',
   './index.html',
+  './words.js',
   './manifest.json',
   'https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap'
 ];

@@ -1,0 +1,1 @@
+const WORDS_ADDITIONS = [];

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>単語管理ツール</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,'Helvetica Neue',sans-serif;background:#0F172A;color:#E2E8F0;min-height:100vh}
+  .header{background:linear-gradient(135deg,#1E3A5F,#2563EB);padding:20px 24px;display:flex;align-items:center;justify-content:space-between}
+  .header h1{font-size:20px;font-weight:700;color:#fff}
+  .header-badge{font-size:12px;background:rgba(255,255,255,0.15);color:#fff;padding:4px 12px;border-radius:20px}
+  .tabs{display:flex;background:#1E293B;border-bottom:1px solid #334155}
+  .tab{padding:14px 24px;font-size:14px;font-weight:600;cursor:pointer;color:#64748B;border-bottom:2px solid transparent;transition:all 0.15s}
+  .tab.active{color:#3B82F6;border-bottom-color:#3B82F6}
+  .pane{display:none;padding:24px}
+  .pane.active{display:block}
+  /* フォーム */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .form-full{grid-column:1/-1}
+  .field{display:flex;flex-direction:column;gap:6px}
+  label{font-size:12px;font-weight:600;color:#94A3B8;text-transform:uppercase;letter-spacing:0.05em}
+  input,select,textarea{background:#1E293B;border:1.5px solid #334155;border-radius:8px;color:#E2E8F0;padding:10px 14px;font-size:14px;outline:none;transition:border-color 0.15s;font-family:inherit}
+  input:focus,select:focus,textarea:focus{border-color:#3B82F6}
+  textarea{resize:vertical;min-height:80px}
+  select option{background:#1E293B}
+  .btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s}
+  .btn-primary{background:#2563EB;color:#fff}
+  .btn-primary:hover{background:#1D4ED8}
+  .btn-success{background:#059669;color:#fff}
+  .btn-success:hover{background:#047857}
+  .btn-danger{background:#DC2626;color:#fff;font-size:12px;padding:6px 12px}
+  .btn-row{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+  /* 一覧 */
+  .stats{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+  .stat-card{background:#1E293B;border-radius:10px;padding:14px 20px;flex:1;min-width:120px}
+  .stat-num{font-size:28px;font-weight:700;color:#3B82F6}
+  .stat-label{font-size:12px;color:#64748B;margin-top:2px}
+  .search-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .search-bar input{flex:1;min-width:200px}
+  .search-bar select{min-width:140px}
+  .table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #334155}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{background:#1E293B;padding:10px 14px;text-align:left;color:#94A3B8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #334155}
+  td{padding:10px 14px;border-bottom:1px solid #1E293B;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#1E293B}
+  .badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600}
+  .badge-naika{background:#4C1D95;color:#C4B5FD}
+  .badge-geka{background:#831843;color:#FBCFE8}
+  .badge-er{background:#78350F;color:#FDE68A}
+  .badge-other{background:#064E3B;color:#6EE7B7}
+  .badge-gen{background:#1E3A5F;color:#93C5FD}
+  .badge-basic{background:#1E3A5F;color:#93C5FD}
+  .badge-inter{background:#3B1F00;color:#FCD34D}
+  .badge-adv{background:#3B0000;color:#FCA5A5}
+  /* ダウンロードエリア */
+  .download-area{background:#1E293B;border-radius:12px;padding:24px;text-align:center}
+  .download-area p{color:#64748B;font-size:14px;margin-bottom:16px}
+  .preview{background:#0F172A;border-radius:8px;padding:16px;font-family:'SF Mono',monospace;font-size:11px;color:#94A3B8;text-align:left;max-height:200px;overflow-y:auto;margin-bottom:16px;border:1px solid #334155;white-space:pre}
+  .toast{position:fixed;bottom:24px;right:24px;background:#059669;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999}
+  .toast.show{transform:translateY(0);opacity:1}
+  .empty{text-align:center;padding:40px;color:#475569;font-size:14px}
+  .row-actions{display:flex;gap:6px}
+  /* デプロイガイド */
+  .guide{background:#1E293B;border-radius:12px;padding:24px;margin-bottom:20px}
+  .guide h3{font-size:16px;font-weight:700;color:#E2E8F0;margin-bottom:12px}
+  .step{display:flex;gap:16px;margin-bottom:16px;align-items:flex-start}
+  .step-num{background:#2563EB;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px}
+  .step-body{flex:1}
+  .step-body p{font-size:14px;color:#CBD5E1;line-height:1.6;margin-bottom:8px}
+  .code-block{background:#0F172A;border-radius:8px;padding:12px 16px;font-family:'SF Mono',Menlo,monospace;font-size:13px;color:#7DD3FC;border:1px solid #334155;cursor:pointer;transition:border-color 0.15s}
+  .code-block:hover{border-color:#3B82F6}
+  .copied{color:#34D399 !important}
+  hr{border:none;border-top:1px solid #334155;margin:20px 0}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 単語管理ツール</h1>
+  <div class="header-badge" id="totalBadge">0語</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('add')">➕ 単語追加</div>
+  <div class="tab" onclick="switchTab('list')">📄 一覧・編集</div>
+  <div class="tab" onclick="switchTab('export')">📦 書き出し</div>
+  <div class="tab" onclick="switchTab('deploy')">🚀 デプロイ手順</div>
+</div>
+
+<!-- 追加タブ -->
+<div class="pane active" id="pane-add">
+  <div class="form-grid">
+    <div class="field">
+      <label>英語（必須）</label>
+      <input id="f-en" type="text" placeholder="e.g. Tibial plateau fracture">
+    </div>
+    <div class="field">
+      <label>ドイツ語</label>
+      <input id="f-de" type="text" placeholder="e.g. Tibiakopffraktur">
+    </div>
+    <div class="field">
+      <label>略語</label>
+      <input id="f-abbr" type="text" placeholder="e.g. TPF">
+    </div>
+    <div class="field">
+      <label>日本語（必須）</label>
+      <input id="f-ja" type="text" placeholder="e.g. 脛骨高原骨折">
+    </div>
+    <div class="field form-full">
+      <label>臨床メモ</label>
+      <textarea id="f-note" placeholder="臨床的な説明・ポイントを記入"></textarea>
+    </div>
+    <div class="field form-full">
+      <label>例文（英語）</label>
+      <textarea id="f-example" placeholder="e.g. A tibial plateau fracture was confirmed on CT scan."></textarea>
+    </div>
+    <div class="field">
+      <label>診療科</label>
+      <select id="f-dept">
+        <option value="GEN">共通</option>
+        <option value="ER">救急科</option>
+        <optgroup label="── 内科系 ──">
+          <option value="IM">総合内科</option>
+          <option value="CV">循環器内科</option>
+          <option value="RESP">呼吸器内科</option>
+          <option value="GI">消化器内科</option>
+          <option value="NEURO">神経内科</option>
+          <option value="RHEUM">リウマチ科</option>
+          <option value="ENDO">内分泌・代謝科</option>
+          <option value="NEPH">腎臓内科</option>
+          <option value="HEME">血液内科</option>
+          <option value="ONCO">腫瘍内科</option>
+          <option value="INFECT">感染症内科</option>
+        </optgroup>
+        <optgroup label="── 外科系 ──">
+          <option value="SURG">外科</option>
+          <option value="ORTHO">整形外科</option>
+          <option value="NSURG">脳神経外科</option>
+          <option value="CSURG">心臓血管外科</option>
+          <option value="PSURG">形成外科</option>
+        </optgroup>
+        <optgroup label="── その他 ──">
+          <option value="PED">小児科</option>
+          <option value="OB">産婦人科</option>
+          <option value="PSY">精神科</option>
+          <option value="DERM">皮膚科</option>
+          <option value="URO">泌尿器科</option>
+          <option value="OPH">眼科</option>
+          <option value="ENT">耳鼻咽喉科</option>
+          <option value="RAD">放射線科</option>
+          <option value="ANES">麻酔科</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="field">
+      <label>カテゴリ</label>
+      <select id="f-cat">
+        <option value="common">よく使うフレーズ</option>
+        <option value="symptom">症状</option>
+        <option value="anatomy">身体部位</option>
+        <option value="diagnosis">診断・検査</option>
+        <option value="treatment">治療・処置</option>
+        <option value="vital">バイタル</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>レベル</label>
+      <select id="f-level">
+        <option value="basic">基礎</option>
+        <option value="intermediate">中級</option>
+        <option value="advanced">上級</option>
+      </select>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="addWord()">➕ 追加する</button>
+    <button class="btn" style="background:#334155;color:#E2E8F0" onclick="clearForm()">クリア</button>
+  </div>
+</div>
+
+<!-- 一覧タブ -->
+<div class="pane" id="pane-list">
+  <div class="stats" id="statsArea"></div>
+  <div class="search-bar">
+    <input id="searchQ" type="text" placeholder="英語・日本語で検索..." oninput="renderTable()">
+    <select id="filterDept" onchange="renderTable()">
+      <option value="">すべての診療科</option>
+      <option value="GEN">共通</option>
+      <option value="ER">救急科</option>
+      <option value="IM">総合内科</option>
+      <option value="CV">循環器内科</option>
+      <option value="RESP">呼吸器内科</option>
+      <option value="GI">消化器内科</option>
+      <option value="NEURO">神経内科</option>
+      <option value="RHEUM">リウマチ科</option>
+      <option value="ENDO">内分泌・代謝科</option>
+      <option value="NEPH">腎臓内科</option>
+      <option value="HEME">血液内科</option>
+      <option value="ONCO">腫瘍内科</option>
+      <option value="INFECT">感染症内科</option>
+      <option value="SURG">外科</option>
+      <option value="ORTHO">整形外科</option>
+      <option value="NSURG">脳神経外科</option>
+      <option value="CSURG">心臓血管外科</option>
+      <option value="PSURG">形成外科</option>
+      <option value="PED">小児科</option>
+      <option value="OB">産婦人科</option>
+      <option value="PSY">精神科</option>
+      <option value="DERM">皮膚科</option>
+      <option value="URO">泌尿器科</option>
+      <option value="OPH">眼科</option>
+      <option value="ENT">耳鼻咽喉科</option>
+      <option value="RAD">放射線科</option>
+      <option value="ANES">麻酔科</option>
+    </select>
+    <select id="filterNew" onchange="renderTable()">
+      <option value="">すべて</option>
+      <option value="new">追加済みのみ</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>英語</th>
+          <th>日本語</th>
+          <th>診療科</th>
+          <th>レベル</th>
+          <th>種別</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="wordTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 書き出しタブ -->
+<div class="pane" id="pane-export">
+  <div class="download-area">
+    <p>追加した単語を既存のwords.jsに統合した新しいファイルを生成します</p>
+    <div class="preview" id="exportPreview">（ここにプレビューが表示されます）</div>
+    <div class="btn-row" style="justify-content:center">
+      <button class="btn btn-success" onclick="generateAndDownload()">⬇️ words.js をダウンロード</button>
+      <button class="btn" style="background:#334155;color:#E2E8F0" onclick="updatePreview()">🔄 プレビュー更新</button>
+    </div>
+  </div>
+  <hr>
+  <div style="background:#1E293B;border-radius:12px;padding:20px;margin-top:0">
+    <h3 style="font-size:14px;font-weight:700;color:#94A3B8;margin-bottom:12px">📤 追加分だけエクスポート（差分）</h3>
+    <p style="font-size:13px;color:#64748B;margin-bottom:12px">今回追加した単語だけをJSスニペットとして出力します。</p>
+    <button class="btn btn-primary" onclick="exportDiff()">差分だけコピー</button>
+  </div>
+</div>
+
+<!-- デプロイ手順タブ -->
+<div class="pane" id="pane-deploy">
+  <div class="guide">
+    <h3>🚀 GitHubへの反映手順（ターミナル不要版）</h3>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <p>「書き出し」タブで <strong>words.js をダウンロード</strong>する</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <p>GitHubリポジトリを開く</p>
+        <div class="code-block" onclick="copyCode(this)">https://github.com/g2ijustatohs/medical-english</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <p><code>words.js</code> をクリック → 右上の鉛筆アイコン → 全選択（Cmd+A）→ 削除 → ダウンロードしたファイルの中身を貼り付け → <strong>Commit changes</strong></p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <p>約30秒後に <strong>https://g2ijustatohs.github.io/medical-english/</strong> に反映されます</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="guide">
+    <h3>⚡ ターミナルで一発デプロイ（上級・推奨）</h3>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <p>まだやっていなければ、GitHubリポジトリをMacにクローン：</p>
+        <div class="code-block" onclick="copyCode(this)">git clone https://github.com/g2ijustatohs/medical-english.git ~/medical-english-repo</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <p>このツールでダウンロードしたwords.jsをリポジトリフォルダに上書きコピー：</p>
+        <div class="code-block" onclick="copyCode(this)">cp ~/Downloads/words.js ~/medical-english-repo/words.js</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <p>一発デプロイ（以下をターミナルに貼り付け）：</p>
+        <div class="code-block" onclick="copyCode(this)">cd ~/medical-english-repo && git add words.js && git commit -m "単語追加 $(date '+%Y-%m-%d')" && git push</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <p>初回のみ認証が必要です。GitHubのユーザー名とPersonal Access Tokenを入力してください（パスワードではなくToken）。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="guide">
+    <h3>🔑 Personal Access Token の取得方法</h3>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <p>GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <p>「repo」にチェックを入れてトークンを生成。表示されたトークンをコピーして保管してください（再表示されません）。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="words.js"></script>
+<script>
+const DEPTS = {
+  GEN:"共通",ER:"救急科",IM:"総合内科",CV:"循環器内科",RESP:"呼吸器内科",
+  GI:"消化器内科",NEURO:"神経内科",RHEUM:"リウマチ科",ENDO:"内分泌・代謝科",
+  NEPH:"腎臓内科",HEME:"血液内科",ONCO:"腫瘍内科",INFECT:"感染症内科",
+  SURG:"外科",ORTHO:"整形外科",NSURG:"脳神経外科",CSURG:"心臓血管外科",PSURG:"形成外科",
+  PED:"小児科",OB:"産婦人科",PSY:"精神科",DERM:"皮膚科",
+  URO:"泌尿器科",OPH:"眼科",ENT:"耳鼻咽喉科",RAD:"放射線科",ANES:"麻酔科"
+};
+
+// 追加単語をlocalStorageで管理
+let newWords = JSON.parse(localStorage.getItem('admin-new-words') || '[]');
+let editingIdx = null;
+
+function saveNew() {
+  localStorage.setItem('admin-new-words', JSON.stringify(newWords));
+  updateBadge();
+}
+
+function updateBadge() {
+  const total = WORDS_DB.length + newWords.length;
+  document.getElementById('totalBadge').textContent = total + '語（追加:' + newWords.length + '語）';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  const tabs = ['add','list','export','deploy'];
+  document.querySelectorAll('.tab')[tabs.indexOf(name)].classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if (name === 'list') { renderStats(); renderTable(); }
+  if (name === 'export') updatePreview();
+}
+
+function clearForm() {
+  ['en','de','abbr','ja','note','example'].forEach(f => document.getElementById('f-'+f).value = '');
+  document.getElementById('f-dept').value = 'GEN';
+  document.getElementById('f-cat').value = 'common';
+  document.getElementById('f-level').value = 'basic';
+  editingIdx = null;
+}
+
+function addWord() {
+  const en = document.getElementById('f-en').value.trim();
+  const ja = document.getElementById('f-ja').value.trim();
+  if (!en || !ja) { showToast('⚠️ 英語と日本語は必須です'); return; }
+
+  // 重複チェック
+  const allEn = [...WORDS_DB.map(t=>t.en), ...newWords.map(t=>t.en)];
+  if (editingIdx === null && allEn.includes(en)) {
+    showToast('⚠️ 同じ英語の単語が既に存在します'); return;
+  }
+
+  const word = {
+    en, de: document.getElementById('f-de').value.trim() || en,
+    abbr: document.getElementById('f-abbr').value.trim(),
+    ja, note: document.getElementById('f-note').value.trim(),
+    example: document.getElementById('f-example').value.trim(),
+    cat: document.getElementById('f-cat').value,
+    level: document.getElementById('f-level').value,
+    dept: document.getElementById('f-dept').value,
+    _new: true
+  };
+
+  if (editingIdx !== null) {
+    newWords[editingIdx] = word;
+    showToast('✅ 更新しました');
+    editingIdx = null;
+  } else {
+    newWords.push(word);
+    showToast('✅ 追加しました！（' + newWords.length + '語）');
+  }
+  saveNew();
+  clearForm();
+}
+
+function editWord(idx) {
+  const w = newWords[idx];
+  document.getElementById('f-en').value = w.en;
+  document.getElementById('f-de').value = w.de || '';
+  document.getElementById('f-abbr').value = w.abbr || '';
+  document.getElementById('f-ja').value = w.ja;
+  document.getElementById('f-note').value = w.note || '';
+  document.getElementById('f-example').value = w.example || '';
+  document.getElementById('f-dept').value = w.dept;
+  document.getElementById('f-cat').value = w.cat;
+  document.getElementById('f-level').value = w.level;
+  editingIdx = idx;
+  switchTab('add');
+  window.scrollTo(0, 0);
+  showToast('📝 編集モード');
+}
+
+function deleteWord(idx) {
+  if (!confirm('削除しますか？')) return;
+  newWords.splice(idx, 1);
+  saveNew();
+  renderTable();
+  showToast('🗑️ 削除しました');
+}
+
+function deptGroup(dept) {
+  if (dept === 'ER') return 'er';
+  if (['IM','CV','RESP','GI','NEURO','RHEUM','ENDO','NEPH','HEME','ONCO','INFECT'].includes(dept)) return 'naika';
+  if (['SURG','ORTHO','NSURG','CSURG','PSURG'].includes(dept)) return 'geka';
+  if (['PED','OB','PSY','DERM','URO','OPH','ENT','RAD','ANES'].includes(dept)) return 'other';
+  return 'gen';
+}
+
+function levelBadge(l) {
+  if (l === 'basic') return '<span class="badge badge-basic">基礎</span>';
+  if (l === 'intermediate') return '<span class="badge badge-inter">中級</span>';
+  return '<span class="badge badge-adv">上級</span>';
+}
+
+function renderStats() {
+  const all = [...WORDS_DB, ...newWords];
+  const depts = {};
+  all.forEach(t => depts[t.dept] = (depts[t.dept]||0)+1);
+  const top5 = Object.entries(depts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  let html = `<div class="stat-card"><div class="stat-num">${all.length}</div><div class="stat-label">総語数</div></div>`;
+  html += `<div class="stat-card"><div class="stat-num" style="color:#34D399">${newWords.length}</div><div class="stat-label">追加済み</div></div>`;
+  top5.forEach(([d,n]) => {
+    html += `<div class="stat-card"><div class="stat-num" style="font-size:20px">${n}</div><div class="stat-label">${DEPTS[d]||d}</div></div>`;
+  });
+  document.getElementById('statsArea').innerHTML = html;
+}
+
+function renderTable() {
+  const q = document.getElementById('searchQ').value.toLowerCase();
+  const dept = document.getElementById('filterDept').value;
+  const onlyNew = document.getElementById('filterNew').value === 'new';
+
+  const base = WORDS_DB.map(t => ({...t, _new: false}));
+  let all = onlyNew ? [...newWords] : [...base, ...newWords];
+
+  if (dept) all = all.filter(t => t.dept === dept);
+  if (q) all = all.filter(t => t.en.toLowerCase().includes(q) || t.ja.includes(q));
+
+  const tbody = document.getElementById('wordTable');
+  if (all.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty">該当する単語がありません</div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = all.slice(0, 200).map((t, i) => {
+    const isNew = t._new;
+    const newIdx = newWords.findIndex(w => w.en === t.en);
+    const actions = isNew
+      ? `<div class="row-actions"><button class="btn" style="background:#1E3A5F;color:#93C5FD;font-size:11px;padding:4px 10px" onclick="editWord(${newIdx})">編集</button><button class="btn btn-danger" onclick="deleteWord(${newIdx})">削除</button></div>`
+      : '<span style="font-size:11px;color:#334155">組込済</span>';
+    return `<tr>
+      <td><strong style="font-size:13px">${t.en}</strong>${t.abbr?`<span style="color:#64748B;font-size:11px"> (${t.abbr})</span>`:''}<br><span style="font-size:11px;color:#64748B">${(t.de||'')}</span></td>
+      <td style="color:#94A3B8">${t.ja}</td>
+      <td><span class="badge badge-${deptGroup(t.dept)}">${DEPTS[t.dept]||t.dept}</span></td>
+      <td>${levelBadge(t.level)}</td>
+      <td>${isNew ? '<span style="color:#34D399;font-size:11px;font-weight:600">NEW</span>' : ''}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updatePreview() {
+  const all = [...WORDS_DB, ...newWords];
+  const lines = ['const WORDS_DB = ['];
+  all.forEach(t => {
+    const esc = s => (s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+    lines.push(`{ en:"${esc(t.en)}", de:"${esc(t.de||t.en)}", abbr:"${esc(t.abbr||'')}", ja:"${esc(t.ja)}", note:"${esc(t.note||'')}", example:"${esc(t.example||'')}", cat:"${t.cat}", level:"${t.level}", dept:"${t.dept}" },`);
+  });
+  lines.push('];');
+  const preview = lines.slice(0, 20).join('\n') + `\n... 計${all.length}語`;
+  document.getElementById('exportPreview').textContent = preview;
+}
+
+function generateAndDownload() {
+  const all = [...WORDS_DB, ...newWords];
+  const lines = ['const WORDS_DB = ['];
+  all.forEach(t => {
+    const esc = s => (s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+    lines.push(`{ en:"${esc(t.en)}", de:"${esc(t.de||t.en)}", abbr:"${esc(t.abbr||'')}", ja:"${esc(t.ja)}", note:"${esc(t.note||'')}", example:"${esc(t.example||'')}", cat:"${t.cat}", level:"${t.level}", dept:"${t.dept}" },`);
+  });
+  lines.push('];');
+  const blob = new Blob([lines.join('\n')], {type:'text/javascript'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'words.js';
+  a.click();
+  showToast(`✅ words.js (${all.length}語) をダウンロードしました`);
+}
+
+function exportDiff() {
+  if (newWords.length === 0) { showToast('追加した単語がありません'); return; }
+  const lines = [];
+  newWords.forEach(t => {
+    const esc = s => (s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+    lines.push(`{ en:"${esc(t.en)}", de:"${esc(t.de||t.en)}", abbr:"${esc(t.abbr||'')}", ja:"${esc(t.ja)}", note:"${esc(t.note||'')}", example:"${esc(t.example||'')}", cat:"${t.cat}", level:"${t.level}", dept:"${t.dept}" },`);
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(() => showToast(`✅ ${newWords.length}語をコピーしました`));
+}
+
+function copyCode(el) {
+  navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+    el.classList.add('copied');
+    const orig = el.textContent;
+    el.textContent = 'コピーしました ✓';
+    setTimeout(() => { el.classList.remove('copied'); el.textContent = orig; }, 1500);
+  });
+}
+
+// 初期化
+updateBadge();
+</script>
+</body>
+</html>

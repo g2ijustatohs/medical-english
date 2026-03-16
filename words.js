@@ -1959,5 +1959,4 @@ const WORDS_DB = [
 { en:"You can go home today.", de:"Sie können heute nach Hause gehen.", abbr:"", ja:"今日は帰宅できます。", note:"帰宅許可の説明。帰宅後の注意点・再受診の目安を必ず合わせて伝える。", example:"You can go home today. Here are some things to watch out for.", cat:"common", level:"basic", dept:"GEN" },
 { en:"Do you have any questions for me?", de:"Haben Sie noch Fragen an mich?", abbr:"", ja:"何かご質問はありますか？", note:"診察・説明の締めくくりに必ず確認する。患者が疑問を表明する機会を提供。", example:"Before I go, do you have any questions for me?", cat:"common", level:"basic", dept:"GEN" },
 { en:"Don't hesitate to call us if anything changes.", de:"Zögern Sie nicht, uns anzurufen, wenn sich etwas ändert.", abbr:"", ja:"何か変化があれば、遠慮なくご連絡ください。", note:"帰宅指示の締めくくり。緊急受診のサインを具体的に伝えておくとより良い。", example:"Don't hesitate to call us if anything changes or gets worse.", cat:"common", level:"basic", dept:"GEN" },
-{ en:"Test word for build", de:"Testwort", abbr:"", ja:"ビルドテスト用単語", note:"動作確認用。後で削除。", example:"This is a test.", cat:"common", level:"basic", dept:"GEN" },
 ];

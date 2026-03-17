@@ -1,11 +1,11 @@
 {
-  "name": "Medical English Dictionary",
-  "short_name": "医療英語",
-  "description": "医療従事者向け英語辞書アプリ",
+  "name": "ClinicalWords 診察英語辞典",
+  "short_name": "ClinicalWords",
+  "description": "研修医・医療従事者向け診察英語辞典アプリ for Residents",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#1A3A5C",
-  "theme_color": "#1A3A5C",
+  "background_color": "#080d14",
+  "theme_color": "#080d14",
   "orientation": "portrait",
   "lang": "ja",
   "icons": [

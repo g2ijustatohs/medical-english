@@ -426,12 +426,12 @@
       <div class="form-group">
         <label class="form-label">カテゴリ</label>
         <select class="form-select" id="f-cat">
+          <option value="common">よく使うフレーズ</option>
           <option value="symptom">症状</option>
-          <option value="anatomy">身体部位</option>
           <option value="diagnosis">診断・検査</option>
           <option value="treatment">治療・処置</option>
+          <option value="anatomy">身体部位</option>
           <option value="vital">バイタル</option>
-          <option value="common">よく使うフレーズ</option>
         </select>
       </div>
     </div>
@@ -472,7 +472,7 @@ const DEPTS = {
   PED:"小児科", OB:"産婦人科", PSY:"精神科", DERM:"皮膚科",
   URO:"泌尿器科", OPH:"眼科", ENT:"耳鼻咽喉科", RAD:"放射線科", ANES:"麻酔科"
 };
-const CATS = { all:"すべて", symptom:"症状", anatomy:"身体部位", diagnosis:"診断・検査", treatment:"治療・処置", vital:"バイタル", common:"よく使うフレーズ" };
+const CATS = { all:"すべて", common:"よく使うフレーズ", symptom:"症状", diagnosis:"診断・検査", treatment:"治療・処置", anatomy:"身体部位", vital:"バイタル" };
 const LEVELS = { basic:"基礎", intermediate:"中級", advanced:"上級" };
 
 const BUILTIN = WORDS_DB;

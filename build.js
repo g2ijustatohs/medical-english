@@ -2,17 +2,25 @@ const fs = require('fs');
 const path = require('path');
 const dir = __dirname;
 
-// BASE読み込み
+// BASE読み込み（eval→Functionで安全に）
 let baseCode = fs.readFileSync(path.join(dir, 'words_base.js'), 'utf8');
 baseCode = baseCode.replace('const WORDS_DB', 'var WORDS_DB');
-eval(baseCode);
-const base = WORDS_DB;
+const base = new Function(baseCode + '; return WORDS_DB;')();
 
 // ADDITIONS読み込み
 let addCode = fs.readFileSync(path.join(dir, 'words_additions.js'), 'utf8');
 addCode = addCode.replace('const WORDS_ADDITIONS', 'var WORDS_ADDITIONS');
-eval(addCode);
-const additions = (typeof WORDS_ADDITIONS !== 'undefined') ? WORDS_ADDITIONS : [];
+const additions = new Function(addCode + '; return typeof WORDS_ADDITIONS !== "undefined" ? WORDS_ADDITIONS : [];')();
+
+// 必須フィールド検証
+const required = ['en', 'ja', 'cat', 'level', 'dept'];
+additions.forEach(function(t, i){
+  var missing = required.filter(function(f){ return !t[f]; });
+  if (missing.length > 0) {
+    console.error('⚠️  additions['+i+'] "'+t.en+'" に必須フィールドがありません: '+missing.join(', '));
+    process.exit(1);
+  }
+});
 
 // 重複除外してマージ（en + abbr の組み合わせで判定）
 function dedupKey(t){ return t.en + '||' + (t.abbr||''); }

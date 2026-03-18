@@ -28,7 +28,7 @@ const WORDS_ADDITIONS = [
 
 ```bash
 node build.js                    # ビルド（sw.js のバージョンも自動更新）
-git add words.js words_base.js words_additions.js sw.js
+git add words.js words_additions.js sw.js
 git commit -m "単語追加"
 git fetch origin main
 git rebase origin/main
@@ -45,8 +45,7 @@ git push --force-with-lease origin <ブランチ名>
 | ファイル | 役割 |
 |---------|------|
 | `words_additions.js` | 新規単語の入力先（ビルド後リセット） |
-| `words_base.js` | 全単語のマスターデータ |
-| `words.js` | 生成ファイル（直接編集しない） |
-| `build.js` | ビルド + sw.js キャッシュ更新 |
+| `words.js` | 全単語データ（ソース兼出力） |
+| `build.js` | ビルド + sw.js キャッシュ更新 + 必須フィールド検証 |
 | `deploy.sh` | ビルド → コミット → push を一括実行 |
 | `sw.js` | Service Worker（キャッシュバージョン管理） |

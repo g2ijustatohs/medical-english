@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const dir = __dirname;
 
-// BASE読み込み（eval→Functionで安全に）
-let baseCode = fs.readFileSync(path.join(dir, 'words_base.js'), 'utf8');
+// words.js をソース兼出力として読み込み
+let baseCode = fs.readFileSync(path.join(dir, 'words.js'), 'utf8');
 baseCode = baseCode.replace('const WORDS_DB', 'var WORDS_DB');
 const base = new Function(baseCode + '; return WORDS_DB;')();
 
@@ -37,15 +37,13 @@ all.forEach(function(t){
 lines.push('];');
 fs.writeFileSync(path.join(dir, 'words.js'), lines.join('\n'));
 
-// 新単語があればwords_base.jsを更新してwords_additions.jsをリセット
+// 新単語があればwords_additions.jsをリセット
 if (newOnes.length > 0) {
-  fs.writeFileSync(path.join(dir, 'words_base.js'), lines.join('\n'));
   fs.writeFileSync(path.join(dir, 'words_additions.js'), 'const WORDS_ADDITIONS = [\n  // ここに追加単語を書く\n];\n');
-  console.log('words.js 生成完了: '+base.length+'語(base) + '+newOnes.length+'語(new) = '+all.length+'語');
-  console.log('✅ words_base.js を '+all.length+'語に更新');
-  console.log('✅ words_additions.js をリセット');
+  console.log(base.length+'語 + '+newOnes.length+'語(new) = '+all.length+'語');
+  console.log('✅ words.js 更新完了');
 } else {
-  console.log('words.js 生成完了: '+all.length+'語（新規追加なし）');
+  console.log(all.length+'語（新規追加なし）');
 }
 
 if (additions.length > newOnes.length) {
@@ -65,6 +63,6 @@ if (newOnes.length > 0) {
       "const CACHE = 'medical-en-v" + newVer + "'"
     );
     fs.writeFileSync(swPath, swCode);
-    console.log('✅ sw.js キャッシュバージョン: v' + oldVer + ' → v' + newVer);
+    console.log('✅ sw.js キャッシュ: v' + oldVer + ' → v' + newVer);
   }
 }

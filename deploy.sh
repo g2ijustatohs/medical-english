@@ -11,7 +11,7 @@ node build.js
 
 echo ""
 echo "=== コミット & プッシュ ==="
-git add words.js words_base.js words_additions.js sw.js
+git add words.js words_additions.js sw.js
 git commit -m "$MSG" || { echo "変更なし、終了します"; exit 0; }
 
 echo ""

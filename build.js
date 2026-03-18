@@ -14,9 +14,10 @@ addCode = addCode.replace('const WORDS_ADDITIONS', 'var WORDS_ADDITIONS');
 eval(addCode);
 const additions = (typeof WORDS_ADDITIONS !== 'undefined') ? WORDS_ADDITIONS : [];
 
-// 重複除外してマージ
-const existingEn = new Set(base.map(function(t){ return t.en; }));
-const newOnes = additions.filter(function(t){ return !existingEn.has(t.en); });
+// 重複除外してマージ（en + abbr の組み合わせで判定）
+function dedupKey(t){ return t.en + '||' + (t.abbr||''); }
+const existingKeys = new Set(base.map(dedupKey));
+const newOnes = additions.filter(function(t){ return !existingKeys.has(dedupKey(t)); });
 const all = base.concat(newOnes);
 
 // words.js書き出し

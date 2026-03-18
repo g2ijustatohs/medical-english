@@ -42,3 +42,20 @@ if (newOnes.length > 0) {
 if (additions.length > newOnes.length) {
   console.log((additions.length - newOnes.length)+'語は重複のためスキップ');
 }
+
+// sw.js キャッシュバージョン自動更新（新規追加があった場合のみ）
+if (newOnes.length > 0) {
+  const swPath = path.join(dir, 'sw.js');
+  let swCode = fs.readFileSync(swPath, 'utf8');
+  const match = swCode.match(/const CACHE = 'medical-en-v(\d+)'/);
+  if (match) {
+    const oldVer = parseInt(match[1]);
+    const newVer = oldVer + 1;
+    swCode = swCode.replace(
+      "const CACHE = 'medical-en-v" + oldVer + "'",
+      "const CACHE = 'medical-en-v" + newVer + "'"
+    );
+    fs.writeFileSync(swPath, swCode);
+    console.log('✅ sw.js キャッシュバージョン: v' + oldVer + ' → v' + newVer);
+  }
+}

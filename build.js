@@ -22,10 +22,23 @@ additions.forEach(function(t, i){
   }
 });
 
-// 重複除外してマージ（en + abbr の組み合わせで判定）
-function dedupKey(t){ return t.en + '||' + (t.abbr||''); }
-const existingKeys = new Set(base.map(dedupKey));
-const newOnes = additions.filter(function(t){ return !existingKeys.has(dedupKey(t)); });
+// 重複除外してマージ（en の大文字小文字無視 + abbr でも照合）
+function normalize(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+const existingEn = new Set(base.map(function(t){ return normalize(t.en); }));
+const existingAbbr = new Set(base.map(function(t){ return t.abbr ? normalize(t.abbr) : null; }).filter(Boolean));
+const newOnes = [];
+const skipped = [];
+additions.forEach(function(t){
+  var normEn = normalize(t.en);
+  var normAbbr = t.abbr ? normalize(t.abbr) : null;
+  if (existingEn.has(normEn) || (normAbbr && existingAbbr.has(normAbbr))) {
+    skipped.push(t.en + (t.abbr ? ' ('+t.abbr+')' : ''));
+  } else {
+    newOnes.push(t);
+    existingEn.add(normEn);
+    if (normAbbr) existingAbbr.add(normAbbr);
+  }
+});
 const all = base.concat(newOnes);
 
 // words.js書き出し
@@ -46,8 +59,9 @@ if (newOnes.length > 0) {
   console.log(all.length+'語（新規追加なし）');
 }
 
-if (additions.length > newOnes.length) {
-  console.log((additions.length - newOnes.length)+'語は重複のためスキップ');
+if (skipped.length > 0) {
+  console.log('⏭ '+skipped.length+'語は重複スキップ:');
+  skipped.forEach(function(s){ console.log('   - '+s); });
 }
 
 // sw.js キャッシュバージョン自動更新（新規追加があった場合のみ）

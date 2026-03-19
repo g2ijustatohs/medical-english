@@ -22,21 +22,18 @@ additions.forEach(function(t, i){
   }
 });
 
-// 重複除外してマージ（en の大文字小文字無視 + abbr でも照合）
+// 重複除外してマージ（en の大文字小文字無視で判定）
 function normalize(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
 const existingEn = new Set(base.map(function(t){ return normalize(t.en); }));
-const existingAbbr = new Set(base.map(function(t){ return t.abbr ? normalize(t.abbr) : null; }).filter(Boolean));
 const newOnes = [];
 const skipped = [];
 additions.forEach(function(t){
   var normEn = normalize(t.en);
-  var normAbbr = t.abbr ? normalize(t.abbr) : null;
-  if (existingEn.has(normEn) || (normAbbr && existingAbbr.has(normAbbr))) {
+  if (existingEn.has(normEn)) {
     skipped.push(t.en + (t.abbr ? ' ('+t.abbr+')' : ''));
   } else {
     newOnes.push(t);
     existingEn.add(normEn);
-    if (normAbbr) existingAbbr.add(normAbbr);
   }
 });
 const all = base.concat(newOnes);

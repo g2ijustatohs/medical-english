@@ -508,6 +508,10 @@
       <label class="form-label">例文（英語）</label>
       <textarea class="form-textarea" id="f-example" placeholder="The patient presents with dyspnea on exertion." style="min-height:56px"></textarea>
     </div>
+    <div class="form-group">
+      <label class="form-label">例文（日本語訳）</label>
+      <textarea class="form-textarea" id="f-example-ja" placeholder="患者は労作時呼吸困難を呈している。" style="min-height:56px"></textarea>
+    </div>
     <button class="submit-btn" onclick="addTerm()">単語を追加する</button>
   </div>
 </div>
@@ -629,7 +633,7 @@ function termHTML(t) {
     </div>
     <div class="tc-detail">
       ${t.note?`<div class="tc-note">${t.note}</div>`:''}
-      ${t.example?`<div class="tc-example">"${t.example}"</div>`:''}
+      ${t.example?`<div class="tc-example">"${t.example}"${t.example_ja?`<div style="font-style:normal;color:var(--text2);margin-top:4px;font-size:11px">→ ${t.example_ja}</div>`:''}</div>`:''}
       <div class="tc-actions" onclick="event.stopPropagation()">
         <button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakWord(event,this)">🔊 単語</button>
         ${t.example?`<button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakExample(event,this)">🔊 例文</button>`:''}
@@ -764,10 +768,11 @@ function addTerm() {
     level: document.getElementById('f-level').value,
     note: document.getElementById('f-note').value.trim(),
     example: document.getElementById('f-example').value.trim(),
+    example_ja: document.getElementById('f-example-ja').value.trim(),
   });
   customIds.add(id);
   saveData();
-  ['f-en','f-abbr','f-ja','f-note','f-example'].forEach(i => document.getElementById(i).value = '');
+  ['f-en','f-abbr','f-ja','f-note','f-example','f-example-ja'].forEach(i => document.getElementById(i).value = '');
   showToast('単語を追加しました！');
   switchTabDirect('search');
 }
@@ -886,7 +891,9 @@ function showCard() {
   }
 
   document.getElementById('fl-note').textContent = t.note || '';
-  document.getElementById('fl-example').textContent = t.example ? '"' + t.example + '"' : '';
+  document.getElementById('fl-example').innerHTML = t.example
+    ? '"' + t.example + '"' + (t.example_ja ? '<div style="font-style:normal;color:var(--text2);margin-top:4px;font-size:10px">→ ' + t.example_ja + '</div>' : '')
+    : '';
 
   // 裏返し状態をリセット
   card.classList.remove('flipped');

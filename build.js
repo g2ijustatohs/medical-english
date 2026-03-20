@@ -42,7 +42,8 @@ const all = base.concat(newOnes);
 function esc(s){ return (s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"'); }
 const lines = ['const WORDS_DB = ['];
 all.forEach(function(t){
-  lines.push('{ en:"'+esc(t.en)+'", de:"'+esc(t.de||t.en)+'", abbr:"'+esc(t.abbr||'')+'", ja:"'+esc(t.ja)+'", note:"'+esc(t.note||'')+'", example:"'+esc(t.example||'')+'", cat:"'+t.cat+'", level:"'+t.level+'", dept:"'+t.dept+'" },');
+  var exJa = t.example_ja ? ', example_ja:"'+esc(t.example_ja)+'"' : '';
+  lines.push('{ en:"'+esc(t.en)+'", de:"'+esc(t.de||t.en)+'", abbr:"'+esc(t.abbr||'')+'", ja:"'+esc(t.ja)+'", note:"'+esc(t.note||'')+'", example:"'+esc(t.example||'')+'", cat:"'+t.cat+'", level:"'+t.level+'", dept:"'+t.dept+'"'+exJa+' },');
 });
 lines.push('];');
 fs.writeFileSync(path.join(dir, 'words.js'), lines.join('\n'));

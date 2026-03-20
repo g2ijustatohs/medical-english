@@ -1,4 +1,4 @@
-const CACHE = 'medical-en-v17';
+const CACHE = 'medical-en-v18';
 
 // ネットワーク優先（常に最新を取得）するファイル
 const NETWORK_FIRST = ['./words.js', './index.html'];

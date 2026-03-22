@@ -1,5 +1,5 @@
 /**
- * .example_ja_translate_cache.json を words_base.js にマージ（未設定の exampleJa のみ）
+ * .example_ja_translate_cache.json を words.js にマージ（未設定の example_ja のみ）
  * node apply-example-ja-cache.js && node build.js
  */
 const fs = require('fs');
@@ -12,7 +12,13 @@ function esc(s) {
   return (s || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-let code = fs.readFileSync(path.join(dir, 'words_base.js'), 'utf8');
+function getJa(t) {
+  const a = t.example_ja && String(t.example_ja).trim() ? t.example_ja : '';
+  const b = t.exampleJa && String(t.exampleJa).trim() ? t.exampleJa : '';
+  return a || b || '';
+}
+
+let code = fs.readFileSync(path.join(dir, 'words.js'), 'utf8');
 code = code.replace('const WORDS_DB', 'var WORDS_DB');
 eval(code);
 
@@ -24,10 +30,10 @@ try {
 }
 
 const out = WORDS_DB.map((t) => {
-  let exampleJa = t.exampleJa && String(t.exampleJa).trim() ? t.exampleJa : '';
-  if (!exampleJa && t.example) {
+  let example_ja = getJa(t);
+  if (!example_ja && t.example) {
     const c = cache[t.example];
-    if (c !== undefined && c !== null && String(c).trim()) exampleJa = String(c).trim();
+    if (c !== undefined && c !== null && String(c).trim()) example_ja = String(c).trim();
   }
   return {
     en: t.en,
@@ -36,7 +42,7 @@ const out = WORDS_DB.map((t) => {
     ja: t.ja,
     note: t.note || '',
     example: t.example || '',
-    exampleJa,
+    example_ja,
     cat: t.cat,
     level: t.level,
     dept: t.dept,
@@ -45,6 +51,8 @@ const out = WORDS_DB.map((t) => {
 
 const lines = ['const WORDS_DB = ['];
 out.forEach((t) => {
+  const ja = t.example_ja || '';
+  const exJaField = ja ? ', example_ja:"' + esc(ja) + '"' : '';
   lines.push(
     '{ en:"' +
       esc(t.en) +
@@ -58,19 +66,19 @@ out.forEach((t) => {
       esc(t.note) +
       '", example:"' +
       esc(t.example) +
-      '", exampleJa:"' +
-      esc(t.exampleJa) +
       '", cat:"' +
       t.cat +
       '", level:"' +
       t.level +
       '", dept:"' +
       t.dept +
-      '" },'
+      '"' +
+      exJaField +
+      ' },'
   );
 });
 lines.push('];');
-fs.writeFileSync(path.join(dir, 'words_base.js'), lines.join('\n'));
+fs.writeFileSync(path.join(dir, 'words.js'), lines.join('\n'));
 
-const n = out.filter((t) => t.exampleJa && t.exampleJa.trim()).length;
-console.log('exampleJa あり:', n, '/', out.length);
+const n = out.filter((t) => t.example_ja && t.example_ja.trim()).length;
+console.log('example_ja あり:', n, '/', out.length);

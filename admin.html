@@ -118,7 +118,7 @@
     </div>
     <div class="field form-full">
       <label>例文（日本語訳）</label>
-      <textarea id="f-exampleJa" placeholder="例：CTで脛骨高原骨折が確認された。"></textarea>
+      <textarea id="f-example-ja" placeholder="例：CTで脛骨高原骨折が確認された。"></textarea>
     </div>
     <div class="field">
       <label>診療科</label>
@@ -383,7 +383,7 @@ function switchTab(name) {
 }
 
 function clearForm() {
-  ['en','de','abbr','ja','note','example','exampleJa'].forEach(f => document.getElementById('f-'+f).value = '');
+  ['en','de','abbr','ja','note','example','example-ja'].forEach(f => document.getElementById('f-'+f).value = '');
   document.getElementById('f-dept').value = 'GEN';
   document.getElementById('f-cat').value = 'common';
   document.getElementById('f-level').value = 'basic';
@@ -406,7 +406,7 @@ function addWord() {
     abbr: document.getElementById('f-abbr').value.trim(),
     ja, note: document.getElementById('f-note').value.trim(),
     example: document.getElementById('f-example').value.trim(),
-    exampleJa: document.getElementById('f-exampleJa').value.trim(),
+    example_ja: document.getElementById('f-example-ja').value.trim(),
     cat: document.getElementById('f-cat').value,
     level: document.getElementById('f-level').value,
     dept: document.getElementById('f-dept').value,
@@ -433,7 +433,7 @@ function editWord(idx) {
   document.getElementById('f-ja').value = w.ja;
   document.getElementById('f-note').value = w.note || '';
   document.getElementById('f-example').value = w.example || '';
-  document.getElementById('f-exampleJa').value = w.exampleJa || '';
+  document.getElementById('f-example-ja').value = w.example_ja || w.exampleJa || '';
   document.getElementById('f-dept').value = w.dept;
   document.getElementById('f-cat').value = w.cat;
   document.getElementById('f-level').value = w.level;
@@ -517,7 +517,8 @@ function updatePreview() {
   const lines = ['const WORDS_DB = ['];
   all.forEach(t => {
     const esc = s => (s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');
-    lines.push(`{ en:"${esc(t.en)}", de:"${esc(t.de||t.en)}", abbr:"${esc(t.abbr||'')}", ja:"${esc(t.ja)}", note:"${esc(t.note||'')}", example:"${esc(t.example||'')}", exampleJa:"${esc(t.exampleJa||'')}", cat:"${t.cat}", level:"${t.level}", dept:"${t.dept}" },`);
+    const exJa = esc(t.example_ja || t.exampleJa || '');
+    lines.push(`{ en:"${esc(t.en)}", de:"${esc(t.de||t.en)}", abbr:"${esc(t.abbr||'')}", ja:"${esc(t.ja)}", note:"${esc(t.note||'')}", example:"${esc(t.example||'')}"${exJa ? `, example_ja:"${exJa}"` : ''}, cat:"${t.cat}", level:"${t.level}", dept:"${t.dept}" },`);
   });
   lines.push('];');
   const preview = lines.slice(0, 20).join('\n') + `\n... 計${all.length}語`;
@@ -529,7 +530,8 @@ function generateAndDownload() {
   const lines = ['const WORDS_DB = ['];
   all.forEach(t => {
     const esc = s => (s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');
-    lines.push(`{ en:"${esc(t.en)}", de:"${esc(t.de||t.en)}", abbr:"${esc(t.abbr||'')}", ja:"${esc(t.ja)}", note:"${esc(t.note||'')}", example:"${esc(t.example||'')}", exampleJa:"${esc(t.exampleJa||'')}", cat:"${t.cat}", level:"${t.level}", dept:"${t.dept}" },`);
+    const exJa = esc(t.example_ja || t.exampleJa || '');
+    lines.push(`{ en:"${esc(t.en)}", de:"${esc(t.de||t.en)}", abbr:"${esc(t.abbr||'')}", ja:"${esc(t.ja)}", note:"${esc(t.note||'')}", example:"${esc(t.example||'')}"${exJa ? `, example_ja:"${exJa}"` : ''}, cat:"${t.cat}", level:"${t.level}", dept:"${t.dept}" },`);
   });
   lines.push('];');
   const blob = new Blob([lines.join('\n')], {type:'text/javascript'});
@@ -545,7 +547,8 @@ function exportDiff() {
   const lines = [];
   newWords.forEach(t => {
     const esc = s => (s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');
-    lines.push(`{ en:"${esc(t.en)}", de:"${esc(t.de||t.en)}", abbr:"${esc(t.abbr||'')}", ja:"${esc(t.ja)}", note:"${esc(t.note||'')}", example:"${esc(t.example||'')}", exampleJa:"${esc(t.exampleJa||'')}", cat:"${t.cat}", level:"${t.level}", dept:"${t.dept}" },`);
+    const exJa = esc(t.example_ja || t.exampleJa || '');
+    lines.push(`{ en:"${esc(t.en)}", de:"${esc(t.de||t.en)}", abbr:"${esc(t.abbr||'')}", ja:"${esc(t.ja)}", note:"${esc(t.note||'')}", example:"${esc(t.example||'')}"${exJa ? `, example_ja:"${exJa}"` : ''}, cat:"${t.cat}", level:"${t.level}", dept:"${t.dept}" },`);
   });
   navigator.clipboard.writeText(lines.join('\n')).then(() => showToast(`✅ ${newWords.length}語をコピーしました`));
 }

@@ -423,7 +423,8 @@
 
   <div class="flash-buttons" id="fl-buttons" style="display:none">
     <button class="fl-btn fl-wrong" onclick="judgeCard(false)">✗ もう一度</button>
-    <button class="fl-btn fl-speak" onclick="speakFlash()">🔊</button>
+    <button class="fl-btn fl-speak" onclick="speakFlashWord()">🔊 単語</button>
+    <button class="fl-btn fl-speak" onclick="speakFlashExample()">🔊 例文</button>
     <button class="fl-btn fl-correct" onclick="judgeCard(true)">✓ 覚えた</button>
   </div>
 
@@ -513,7 +514,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">例文（日本語訳）</label>
-      <textarea class="form-textarea" id="f-example-ja" placeholder="患者は労作時呼吸困難を主訴に来院した。" style="min-height:56px"></textarea>
+      <textarea class="form-textarea" id="f-example-ja" placeholder="患者は労作時呼吸困難を呈している。" style="min-height:56px"></textarea>
     </div>
     <button class="submit-btn" onclick="addTerm()">単語を追加する</button>
   </div>
@@ -605,7 +606,7 @@ function getFiltered() {
     const catOk = currentCat === 'all' || t.cat === currentCat;
     const deptOk = dept === 'all' || t.dept === dept;
     const levelOk = level === 'all' || t.level === level;
-    const qOk = !q || t.en.toLowerCase().includes(q) || t.ja.includes(q) || (t.de&&t.de.toLowerCase().includes(q)) || (t.abbr&&t.abbr.toLowerCase().includes(q)) || (t.note&&t.note.toLowerCase().includes(q)) || (t.example&&t.example.toLowerCase().includes(q)) || (t.exampleJa&&t.exampleJa.includes(q));
+    const qOk = !q || t.en.toLowerCase().includes(q) || t.ja.includes(q) || (t.de&&t.de.toLowerCase().includes(q)) || (t.abbr&&t.abbr.toLowerCase().includes(q)) || (t.note&&t.note.toLowerCase().includes(q)) || (t.example&&t.example.toLowerCase().includes(q)) || (t.example_ja&&t.example_ja.includes(q));
     return catOk && deptOk && levelOk && qOk;
   });
 }
@@ -643,12 +644,13 @@ function termHTML(t) {
     </div>
     <div class="tc-detail">
       ${t.note?`<div class="tc-note">${t.note}</div>`:''}
-      ${t.example||t.exampleJa?`<div>
+      ${t.example||t.example_ja?`<div>
         ${t.example?`<div><span class="tc-example-label">例文 EN</span><div class="tc-example">"${escHtml(t.example)}"</div></div>`:''}
-        ${t.exampleJa?`<div><span class="tc-example-label">例文 JA</span><div class="tc-example-ja">${escHtml(t.exampleJa)}</div></div>`:''}
+        ${t.example_ja?`<div><span class="tc-example-label">例文 JA</span><div class="tc-example-ja">${escHtml(t.example_ja)}</div></div>`:''}
       </div>`:''}
       <div class="tc-actions" onclick="event.stopPropagation()">
-        <button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakById(event,this)">🔊 読み上げ</button>
+        <button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakWord(event,this)">🔊 単語</button>
+        ${t.example?`<button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakExample(event,this)">🔊 例文</button>`:''}
         <button class="tc-btn${isBk?' bookmarked':''}" onclick="toggleBk('${t.id}')">${isBk?'★ 保存中':'☆ ブックマーク'}</button>
         ${isCst?`<button class="tc-btn delete-btn" onclick="delTerm('${t.id}')">削除</button>`:''}
       </div>
@@ -692,7 +694,7 @@ function speakText(text, btn, lang) {
   if (window.speechSynthesis.speaking) {
     window.speechSynthesis.cancel();
     document.querySelectorAll('.speak-btn, .fl-speak').forEach(b => {
-      b.textContent = b.classList.contains('fl-speak') ? '🔊' : '🔊 読み上げ';
+      b.textContent = b._origText || b.textContent;
       b.classList.remove('speaking');
     });
     return;
@@ -708,14 +710,13 @@ function speakText(text, btn, lang) {
     if (voice) utter.voice = voice;
 
     if (btn) {
-      const isFlash = btn.classList.contains('fl-speak');
-      btn.textContent = isFlash ? '⏹' : '⏹ 停止';
+      btn._origText = btn.textContent;
+      btn.textContent = btn.classList.contains('fl-speak') ? '⏹' : '⏹ 停止';
       btn.classList.add('speaking');
     }
     utter.onend = utter.onerror = () => {
       if (btn) {
-        const isFlash = btn.classList.contains('fl-speak');
-        btn.textContent = isFlash ? '🔊' : '🔊 読み上げ';
+        btn.textContent = btn._origText || '🔊 単語';
         btn.classList.remove('speaking');
       }
     };
@@ -734,14 +735,20 @@ function speakText(text, btn, lang) {
   }
 }
 
-function speakById(event, btn) {
+function speakWord(event, btn) {
   event.stopPropagation();
   const id = btn.getAttribute('data-id');
   const term = allTerms.find(t => t.id === id);
   if (!term) return;
-  const mainT = mainText(term);
-  const text = (currentLang === 'en' && term.example) ? mainT + '. ' + term.example : mainT;
-  speakText(text, btn, speechLang());
+  speakText(mainText(term), btn, speechLang());
+}
+
+function speakExample(event, btn) {
+  event.stopPropagation();
+  const id = btn.getAttribute('data-id');
+  const term = allTerms.find(t => t.id === id);
+  if (!term || !term.example) return;
+  speakText(term.example, btn, speechLang());
 }
 
 function toggleExp(id) {
@@ -775,7 +782,7 @@ function addTerm() {
     level: document.getElementById('f-level').value,
     note: document.getElementById('f-note').value.trim(),
     example: document.getElementById('f-example').value.trim(),
-    exampleJa: document.getElementById('f-example-ja').value.trim(),
+    example_ja: document.getElementById('f-example-ja').value.trim(),
   });
   customIds.add(id);
   saveData();
@@ -899,10 +906,10 @@ function showCard() {
 
   document.getElementById('fl-note').textContent = t.note || '';
   const flEx = document.getElementById('fl-example');
-  if (t.example || t.exampleJa) {
+  if (t.example || t.example_ja) {
     let h = '';
     if (t.example) h += '<div class="fl-ex-en">EN: &quot;' + escHtml(t.example) + '&quot;</div>';
-    if (t.exampleJa) h += '<div class="fl-ex-ja">JA: ' + escHtml(t.exampleJa) + '</div>';
+    if (t.example_ja) h += '<div class="fl-ex-ja">JA: ' + escHtml(t.example_ja) + '</div>';
     flEx.innerHTML = h;
   } else {
     flEx.textContent = '';
@@ -982,13 +989,19 @@ function restartWrong() {
   showCard();
 }
 
-function speakFlash() {
+function speakFlashWord() {
   if (flCards.length === 0 || flIndex >= flCards.length) return;
   const t = flCards[flIndex];
-  const mainT = mainText(t);
-  const text = (currentLang === 'en' && t.example) ? mainT + '. ' + t.example : mainT;
-  const btn = document.querySelector('.fl-speak');
-  speakText(text, btn, speechLang());
+  const btn = document.querySelectorAll('.fl-speak')[0];
+  speakText(mainText(t), btn, speechLang());
+}
+
+function speakFlashExample() {
+  if (flCards.length === 0 || flIndex >= flCards.length) return;
+  const t = flCards[flIndex];
+  if (!t.example) return;
+  const btn = document.querySelectorAll('.fl-speak')[1];
+  speakText(t.example, btn, speechLang());
 }
 
 

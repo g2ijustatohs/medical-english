@@ -1,0 +1,12 @@
+{
+  "name": "medical-english",
+  "private": true,
+  "description": "Build scripts for ClinicalWords dictionary",
+  "scripts": {
+    "build": "node build.js",
+    "translate-examples": "node fill-example-ja-translate.js"
+  },
+  "devDependencies": {
+    "google-translate-api-x": "^10.7.2"
+  }
+}

@@ -135,6 +135,8 @@
     .term-card.expanded .tc-detail { display: block; }
     .tc-note { font-size: 13px; color: var(--text2); line-height: 1.65; margin-bottom: 8px; }
     .tc-example { font-size: 12px; font-style: italic; color: var(--text3); background: var(--bg); padding: 8px 11px; border-radius: 8px; border-left: 3px solid var(--accent3); line-height: 1.55; }
+    .tc-example-ja { font-size: 12px; font-style: normal; color: var(--text2); background: #fff; padding: 8px 11px; border-radius: 8px; border-left: 3px solid var(--accent2); line-height: 1.6; margin-top: 6px; }
+    .tc-example-label { font-size: 10px; color: var(--text3); margin-top: 6px; margin-bottom: 2px; font-family: 'DM Mono', monospace; letter-spacing: 0.4px; }
     .tc-actions { display: flex; gap: 7px; margin-top: 11px; }
     .tc-btn {
       flex: 1; padding: 8px 6px; font-size: 12px; border-radius: 9px;
@@ -213,7 +215,9 @@
     .flash-abbr { font-size: 13px; opacity: 0.75; font-family: 'DM Mono', monospace; }
     .flash-hint { font-size: 11px; opacity: 0.5; margin-top: 16px; }
     .flash-note { font-size: 12px; color: var(--text2); line-height: 1.6; margin: 7px 0; text-align: center; max-height: 78px; overflow: hidden; }
-    .flash-example { font-size: 11px; font-style: italic; color: var(--text3); background: var(--bg); padding: 6px 10px; border-radius: 8px; border-left: 3px solid var(--accent3); line-height: 1.5; width: 100%; text-align: left; margin-top: 6px; }
+    .flash-example { font-size: 11px; color: var(--text3); background: var(--bg); padding: 6px 10px; border-radius: 8px; border-left: 3px solid var(--accent3); line-height: 1.5; width: 100%; text-align: left; margin-top: 6px; }
+    .flash-example .fl-ex-en { font-style: italic; }
+    .flash-example .fl-ex-ja { font-style: normal; color: var(--text2); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border2); }
 
     .flash-buttons { display: flex; gap: 10px; padding: 0 14px 10px; align-items: center; }
     .fl-btn { border: none; border-radius: 50px; font-size: 14px; font-weight: 600; padding: 13px 20px; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
@@ -507,6 +511,10 @@
       <label class="form-label">例文（英語）</label>
       <textarea class="form-textarea" id="f-example" placeholder="The patient presents with dyspnea on exertion." style="min-height:56px"></textarea>
     </div>
+    <div class="form-group">
+      <label class="form-label">例文（日本語訳）</label>
+      <textarea class="form-textarea" id="f-example-ja" placeholder="患者は労作時呼吸困難を主訴に来院した。" style="min-height:56px"></textarea>
+    </div>
     <button class="submit-btn" onclick="addTerm()">単語を追加する</button>
   </div>
 </div>
@@ -514,6 +522,13 @@
 <div class="toast" id="toast"></div>
 
 <script>
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 const DEPTS = {
   GEN:"共通", ER:"救急科",
   // 内科系
@@ -590,7 +605,7 @@ function getFiltered() {
     const catOk = currentCat === 'all' || t.cat === currentCat;
     const deptOk = dept === 'all' || t.dept === dept;
     const levelOk = level === 'all' || t.level === level;
-    const qOk = !q || t.en.toLowerCase().includes(q) || t.ja.includes(q) || (t.de&&t.de.toLowerCase().includes(q)) || (t.abbr&&t.abbr.toLowerCase().includes(q)) || (t.note&&t.note.toLowerCase().includes(q));
+    const qOk = !q || t.en.toLowerCase().includes(q) || t.ja.includes(q) || (t.de&&t.de.toLowerCase().includes(q)) || (t.abbr&&t.abbr.toLowerCase().includes(q)) || (t.note&&t.note.toLowerCase().includes(q)) || (t.example&&t.example.toLowerCase().includes(q)) || (t.exampleJa&&t.exampleJa.includes(q));
     return catOk && deptOk && levelOk && qOk;
   });
 }
@@ -628,7 +643,10 @@ function termHTML(t) {
     </div>
     <div class="tc-detail">
       ${t.note?`<div class="tc-note">${t.note}</div>`:''}
-      ${t.example?`<div class="tc-example">"${t.example}"</div>`:''}
+      ${t.example||t.exampleJa?`<div>
+        ${t.example?`<div><span class="tc-example-label">例文 EN</span><div class="tc-example">"${escHtml(t.example)}"</div></div>`:''}
+        ${t.exampleJa?`<div><span class="tc-example-label">例文 JA</span><div class="tc-example-ja">${escHtml(t.exampleJa)}</div></div>`:''}
+      </div>`:''}
       <div class="tc-actions" onclick="event.stopPropagation()">
         <button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakById(event,this)">🔊 読み上げ</button>
         <button class="tc-btn${isBk?' bookmarked':''}" onclick="toggleBk('${t.id}')">${isBk?'★ 保存中':'☆ ブックマーク'}</button>
@@ -757,10 +775,11 @@ function addTerm() {
     level: document.getElementById('f-level').value,
     note: document.getElementById('f-note').value.trim(),
     example: document.getElementById('f-example').value.trim(),
+    exampleJa: document.getElementById('f-example-ja').value.trim(),
   });
   customIds.add(id);
   saveData();
-  ['f-en','f-abbr','f-ja','f-note','f-example'].forEach(i => document.getElementById(i).value = '');
+  ['f-en','f-abbr','f-ja','f-note','f-example','f-example-ja'].forEach(i => document.getElementById(i).value = '');
   showToast('単語を追加しました！');
   switchTabDirect('search');
 }
@@ -879,7 +898,15 @@ function showCard() {
   }
 
   document.getElementById('fl-note').textContent = t.note || '';
-  document.getElementById('fl-example').textContent = t.example ? '"' + t.example + '"' : '';
+  const flEx = document.getElementById('fl-example');
+  if (t.example || t.exampleJa) {
+    let h = '';
+    if (t.example) h += '<div class="fl-ex-en">EN: &quot;' + escHtml(t.example) + '&quot;</div>';
+    if (t.exampleJa) h += '<div class="fl-ex-ja">JA: ' + escHtml(t.exampleJa) + '</div>';
+    flEx.innerHTML = h;
+  } else {
+    flEx.textContent = '';
+  }
 
   // 裏返し状態をリセット
   card.classList.remove('flipped');

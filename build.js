@@ -23,7 +23,7 @@ const all = base.concat(newOnes);
 function esc(s){ return (s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"'); }
 const lines = ['const WORDS_DB = ['];
 all.forEach(function(t){
-  lines.push('{ en:"'+esc(t.en)+'", de:"'+esc(t.de||t.en)+'", abbr:"'+esc(t.abbr||'')+'", ja:"'+esc(t.ja)+'", note:"'+esc(t.note||'')+'", example:"'+esc(t.example||'')+'", cat:"'+t.cat+'", level:"'+t.level+'", dept:"'+t.dept+'" },');
+  lines.push('{ en:"'+esc(t.en)+'", de:"'+esc(t.de||t.en)+'", abbr:"'+esc(t.abbr||'')+'", ja:"'+esc(t.ja)+'", note:"'+esc(t.note||'')+'", example:"'+esc(t.example||'')+'", exampleJa:"'+esc(t.exampleJa||'')+'", cat:"'+t.cat+'", level:"'+t.level+'", dept:"'+t.dept+'" },');
 });
 lines.push('];');
 fs.writeFileSync(path.join(dir, 'words.js'), lines.join('\n'));

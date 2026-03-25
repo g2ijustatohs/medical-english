@@ -647,13 +647,13 @@ function termHTML(t) {
     <div class="tc-detail">
       ${t.note?`<div class="tc-note">${t.note}</div>`:''}
       ${t.example||t.example_ja||t.example_de?`<div>
-        ${t.example?`<div><span class="tc-example-label">例文 EN</span><div class="tc-example">"${escHtml(t.example)}"</div></div>`:''}
-        ${t.example_de?`<div><span class="tc-example-label">例文 DE</span><div class="tc-example-de">"${escHtml(t.example_de)}"</div></div>`:''}
+        ${currentLang==='en'&&t.example?`<div><span class="tc-example-label">例文 EN</span><div class="tc-example">"${escHtml(t.example)}"</div></div>`:''}
+        ${currentLang==='de'&&t.example_de?`<div><span class="tc-example-label">例文 DE</span><div class="tc-example-de">"${escHtml(t.example_de)}"</div></div>`:''}
         ${t.example_ja?`<div><span class="tc-example-label">例文 JA</span><div class="tc-example-ja">${escHtml(t.example_ja)}</div></div>`:''}
       </div>`:''}
       <div class="tc-actions" onclick="event.stopPropagation()">
         <button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakWord(event,this)">🔊 単語</button>
-        ${t.example?`<button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakExample(event,this)">🔊 例文</button>`:''}
+        ${(currentLang==='en'&&t.example)||(currentLang==='de'&&(t.example_de||t.example))?`<button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakExample(event,this)">🔊 例文</button>`:''}
         <button class="tc-btn${isBk?' bookmarked':''}" onclick="toggleBk('${t.id}')">${isBk?'★ 保存中':'☆ ブックマーク'}</button>
         ${isCst?`<button class="tc-btn delete-btn" onclick="delTerm('${t.id}')">削除</button>`:''}
       </div>
@@ -750,8 +750,10 @@ function speakExample(event, btn) {
   event.stopPropagation();
   const id = btn.getAttribute('data-id');
   const term = allTerms.find(t => t.id === id);
-  if (!term || !term.example) return;
-  speakText(term.example, btn, speechLang());
+  if (!term) return;
+  const text = currentLang === 'de' ? (term.example_de || term.example) : term.example;
+  if (!text) return;
+  speakText(text, btn, speechLang());
 }
 
 function toggleExp(id) {
@@ -911,8 +913,8 @@ function showCard() {
   const flEx = document.getElementById('fl-example');
   if (t.example || t.example_ja || t.example_de) {
     let h = '';
-    if (t.example) h += '<div class="fl-ex-en">EN: &quot;' + escHtml(t.example) + '&quot;</div>';
-    if (t.example_de) h += '<div class="fl-ex-de">DE: &quot;' + escHtml(t.example_de) + '&quot;</div>';
+    if (currentLang === 'en' && t.example) h += '<div class="fl-ex-en">EN: &quot;' + escHtml(t.example) + '&quot;</div>';
+    if (currentLang === 'de' && t.example_de) h += '<div class="fl-ex-de">DE: &quot;' + escHtml(t.example_de) + '&quot;</div>';
     if (t.example_ja) h += '<div class="fl-ex-ja">JA: ' + escHtml(t.example_ja) + '</div>';
     flEx.innerHTML = h;
   } else {

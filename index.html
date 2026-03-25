@@ -300,7 +300,7 @@
   <div class="header-top">
     <div>
       <div class="header-title" id="headerTitle">ClinicalWords</div>
-      <div class="header-badge">診察英語辞典 for Residents</div>
+      <div class="header-badge" id="headerBadge">診察英語辞典 for Residents</div>
     </div>
     <div class="lang-switcher">
       <button class="lang-btn active" id="btn-en" onclick="setLang('en')">🇬🇧 EN</button>
@@ -608,7 +608,7 @@ function getFiltered() {
     const catOk = currentCat === 'all' || t.cat === currentCat;
     const deptOk = dept === 'all' || t.dept === dept;
     const levelOk = level === 'all' || t.level === level;
-    const qOk = !q || t.en.toLowerCase().includes(q) || t.ja.includes(q) || (t.de&&t.de.toLowerCase().includes(q)) || (t.abbr&&t.abbr.toLowerCase().includes(q)) || (t.note&&t.note.toLowerCase().includes(q)) || (t.example&&t.example.toLowerCase().includes(q)) || (t.example_ja&&t.example_ja.includes(q));
+    const qOk = !q || mainText(t).toLowerCase().includes(q) || t.ja.includes(q) || (t.abbr&&t.abbr.toLowerCase().includes(q)) || (t.note&&t.note.toLowerCase().includes(q)) || (currentLang==='en'&&t.example&&t.example.toLowerCase().includes(q)) || (currentLang==='de'&&t.example_de&&t.example_de.toLowerCase().includes(q)) || (t.example_ja&&t.example_ja.includes(q));
     return catOk && deptOk && levelOk && qOk;
   });
 }
@@ -628,6 +628,9 @@ function termHTML(t) {
   const isExp = expandedId === t.id;
   const isBk = bookmarks.has(t.id);
   const isCst = customIds.has(t.id);
+  const ex = currentLang === 'de' ? t.example_de : t.example;
+  const exLabel = currentLang === 'de' ? '例文 DE' : '例文 EN';
+  const exClass = currentLang === 'de' ? 'tc-example-de' : 'tc-example';
   return `<div class="term-card${isExp?' expanded':''}" onclick="toggleExp('${t.id}')">
     <div class="tc-top">
       <div style="flex:1;min-width:0">
@@ -646,14 +649,13 @@ function termHTML(t) {
     </div>
     <div class="tc-detail">
       ${t.note?`<div class="tc-note">${t.note}</div>`:''}
-      ${t.example||t.example_ja||t.example_de?`<div>
-        ${currentLang==='en'&&t.example?`<div><span class="tc-example-label">例文 EN</span><div class="tc-example">"${escHtml(t.example)}"</div></div>`:''}
-        ${currentLang==='de'&&t.example_de?`<div><span class="tc-example-label">例文 DE</span><div class="tc-example-de">"${escHtml(t.example_de)}"</div></div>`:''}
+      ${ex||t.example_ja?`<div>
+        ${ex?`<div><span class="tc-example-label">${exLabel}</span><div class="${exClass}">"${escHtml(ex)}"</div></div>`:''}
         ${t.example_ja?`<div><span class="tc-example-label">例文 JA</span><div class="tc-example-ja">${escHtml(t.example_ja)}</div></div>`:''}
       </div>`:''}
       <div class="tc-actions" onclick="event.stopPropagation()">
         <button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakWord(event,this)">🔊 単語</button>
-        ${(currentLang==='en'&&t.example)||(currentLang==='de'&&(t.example_de||t.example))?`<button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakExample(event,this)">🔊 例文</button>`:''}
+        ${ex?`<button class="tc-btn speak-btn" data-id="${t.id}" onclick="speakExample(event,this)">🔊 例文</button>`:''}
         <button class="tc-btn${isBk?' bookmarked':''}" onclick="toggleBk('${t.id}')">${isBk?'★ 保存中':'☆ ブックマーク'}</button>
         ${isCst?`<button class="tc-btn delete-btn" onclick="delTerm('${t.id}')">削除</button>`:''}
       </div>
@@ -911,10 +913,14 @@ function showCard() {
 
   document.getElementById('fl-note').textContent = t.note || '';
   const flEx = document.getElementById('fl-example');
-  if (t.example || t.example_ja || t.example_de) {
+  const flExText = currentLang === 'de' ? t.example_de : t.example;
+  if (flExText || t.example_ja) {
     let h = '';
-    if (currentLang === 'en' && t.example) h += '<div class="fl-ex-en">EN: &quot;' + escHtml(t.example) + '&quot;</div>';
-    if (currentLang === 'de' && t.example_de) h += '<div class="fl-ex-de">DE: &quot;' + escHtml(t.example_de) + '&quot;</div>';
+    if (flExText) {
+      const flExCls = currentLang === 'de' ? 'fl-ex-de' : 'fl-ex-en';
+      const flExLbl = currentLang === 'de' ? 'DE' : 'EN';
+      h += '<div class="' + flExCls + '">' + flExLbl + ': &quot;' + escHtml(flExText) + '&quot;</div>';
+    }
     if (t.example_ja) h += '<div class="fl-ex-ja">JA: ' + escHtml(t.example_ja) + '</div>';
     flEx.innerHTML = h;
   } else {
@@ -1022,7 +1028,8 @@ function setLang(lang) {
   // ヘッダータイトル
   document.getElementById('headerTitle').textContent =
     lang === 'en' ? 'Medical English' : 'Medizinisches Deutsch';
-  // 音声言語も更新
+  document.getElementById('headerBadge').textContent =
+    lang === 'en' ? '診察英語辞典 for Residents' : '診察ドイツ語辞典 für Assistenzärzte';
   // 再描画
   if (currentTab === 'search') renderList();
   else if (currentTab === 'bookmarks') renderBookmarks();

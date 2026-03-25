@@ -44,7 +44,8 @@ const lines = ['const WORDS_DB = ['];
 all.forEach(function(t){
   var ja = (t.example_ja ? t.example_ja : t.exampleJa) || '';
   var exJa = ja ? ', example_ja:"'+esc(ja)+'"' : '';
-  lines.push('{ en:"'+esc(t.en)+'", de:"'+esc(t.de||t.en)+'", abbr:"'+esc(t.abbr||'')+'", ja:"'+esc(t.ja)+'", note:"'+esc(t.note||'')+'", example:"'+esc(t.example||'')+'", cat:"'+t.cat+'", level:"'+t.level+'", dept:"'+t.dept+'"'+exJa+' },');
+  var exDe = t.example_de ? ', example_de:"'+esc(t.example_de)+'"' : '';
+  lines.push('{ en:"'+esc(t.en)+'", de:"'+esc(t.de||t.en)+'", abbr:"'+esc(t.abbr||'')+'", ja:"'+esc(t.ja)+'", note:"'+esc(t.note||'')+'", example:"'+esc(t.example||'')+'", cat:"'+t.cat+'", level:"'+t.level+'", dept:"'+t.dept+'"'+exJa+exDe+' },');
 });
 lines.push('];');
 fs.writeFileSync(path.join(dir, 'words.js'), lines.join('\n'));
